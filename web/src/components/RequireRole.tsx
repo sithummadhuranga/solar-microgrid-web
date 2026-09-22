@@ -1,3 +1,4 @@
+// sends to login if nobody is logged in, or shows a message if the role does not match
 import type { ReactNode } from 'react'
 import { Navigate } from 'react-router'
 import Container from 'react-bootstrap/Container'
@@ -8,7 +9,6 @@ type RequireRoleProps = {
   children: ReactNode
 }
 
-// sends to login if nobody is logged in, or shows a message if the role does not match
 function RequireRole({ role, children }: RequireRoleProps) {
   const user = getUser()
 

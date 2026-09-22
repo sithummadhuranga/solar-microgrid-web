@@ -1,6 +1,6 @@
+// calls the api, adds the token header, and throws the server message if it fails
 const API_URL = import.meta.env.VITE_API_URL
 
-// calls the api and throws the server message if it fails
 export async function callApi(path: string, method = 'GET', body: unknown = null) {
   const token = localStorage.getItem('token')
 

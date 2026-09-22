@@ -1,3 +1,4 @@
+// shows the navbar with the logged in user, then the page content below it
 import type { ReactNode } from 'react'
 import Navbar from 'react-bootstrap/Navbar'
 import Container from 'react-bootstrap/Container'
@@ -9,7 +10,6 @@ type LayoutProps = {
   children: ReactNode
 }
 
-// shows the navbar with the logged in user, then the page content below it
 function Layout({ children }: LayoutProps) {
   const user = getUser()
   const navigate = useNavigate()
@@ -22,7 +22,7 @@ function Layout({ children }: LayoutProps) {
 
   return (
     <>
-      <Navbar bg="primary" variant="dark" className="mb-4">
+      <Navbar bg="primary" variant="dark" className="mb-4 shadow-sm">
         <Container className="justify-content-between">
           <Navbar.Brand className="fw-semibold">Solar Microgrid</Navbar.Brand>
           {user && (
@@ -35,7 +35,7 @@ function Layout({ children }: LayoutProps) {
           )}
         </Container>
       </Navbar>
-      <Container>{children}</Container>
+      <Container className="pb-5">{children}</Container>
     </>
   )
 }

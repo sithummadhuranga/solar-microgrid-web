@@ -1,0 +1,5 @@
+/* one soft grey background for the whole app, so white cards stand out */
+body {
+  background-color: var(--bs-tertiary-bg);
+  min-height: 100vh;
+}

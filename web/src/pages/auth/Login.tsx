@@ -1,3 +1,4 @@
+// web login, for backoffice and grid operator only, prosumers use the mobile app
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router'
@@ -8,8 +9,8 @@ import Card from 'react-bootstrap/Card'
 import Form from 'react-bootstrap/Form'
 import Button from 'react-bootstrap/Button'
 import Alert from 'react-bootstrap/Alert'
-import { callApi } from '../lib/api'
-import { saveLogin } from '../lib/auth'
+import { callApi } from '../../lib/api'
+import { saveLogin } from '../../lib/auth'
 
 type LoginResult = {
   token: string
@@ -18,7 +19,6 @@ type LoginResult = {
   role: string
 }
 
-// web login, for backoffice and grid operator only, prosumers use the mobile app
 function Login() {
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
@@ -50,23 +50,25 @@ function Login() {
   }
 
   return (
-    <Container
-      fluid
-      className="min-vh-100 d-flex align-items-center justify-content-center bg-body-tertiary"
-    >
+    <Container fluid className="min-vh-100 d-flex align-items-center justify-content-center">
       <Row className="w-100">
         <Col xs={12} sm={8} md={5} lg={4} className="mx-auto">
-          <Card className="shadow-sm border-0">
-            <Card.Header className="bg-primary text-white text-center py-3">
-              <span className="fs-5 fw-semibold">Solar Microgrid</span>
+          <Card className="shadow-sm border-0 rounded-4 overflow-hidden">
+            <Card.Header className="bg-primary text-white text-center py-4 border-0">
+              <span className="fs-4 fw-semibold">Solar Microgrid</span>
             </Card.Header>
-            <Card.Body className="p-4">
-              {error && <Alert variant="danger">{error}</Alert>}
+            <Card.Body className="p-4 p-md-5">
+              {error && (
+                <Alert variant="danger" className="py-2">
+                  {error}
+                </Alert>
+              )}
 
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Email</Form.Label>
+                  <Form.Label className="fw-medium">Email</Form.Label>
                   <Form.Control
+                    size="lg"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     required
@@ -75,8 +77,9 @@ function Login() {
                 </Form.Group>
 
                 <Form.Group className="mb-4">
-                  <Form.Label>Password</Form.Label>
+                  <Form.Label className="fw-medium">Password</Form.Label>
                   <Form.Control
+                    size="lg"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -84,7 +87,7 @@ function Login() {
                   />
                 </Form.Group>
 
-                <Button type="submit" variant="primary" className="w-100">
+                <Button type="submit" variant="primary" size="lg" className="w-100">
                   Log in
                 </Button>
               </Form>

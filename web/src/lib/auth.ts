@@ -1,3 +1,4 @@
+// saves, reads and clears the logged in user and token in localStorage
 export type LoggedInUser = {
   id: string
   fullName: string
