@@ -8,9 +8,15 @@ namespace SolarMicrogrid.Api.Models;
 
 public class UserDetail
 {
-    // the nic for a prosumer, the username for a web user, this is the mongo _id
+    // a guid made before insert, same idea for every role
     [BsonId]
     public string Id { get; set; } = "";
+
+    // only prosumers have a nic
+    public string Nic { get; set; } = "";
+
+    // only backoffice and grid operator have an email
+    public string Email { get; set; } = "";
 
     public string Role { get; set; } = "";
 
