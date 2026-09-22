@@ -6,8 +6,6 @@ Smart Solar Microgrid Trading System, a university practice project. A web app f
 
 api is the C# Web API. web is the React web app.
 
-Full scope and requirements are in PROJECT_SCOPE.md at the repo root. Coding rules are in .claude/skills/solar-microgrid-dev/SKILL.md.
-
 ## Needed
 
 .NET 10 SDK, Node 22.22 or newer, MongoDB running locally.
