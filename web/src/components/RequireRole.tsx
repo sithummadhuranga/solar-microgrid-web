@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Navigate } from 'react-router'
 import Container from 'react-bootstrap/Container'
-import { getUser } from '../auth'
+import { getUser } from '../lib/auth'
 
 type RequireRoleProps = {
   role: string

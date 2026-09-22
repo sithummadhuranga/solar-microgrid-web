@@ -8,8 +8,8 @@ import Card from 'react-bootstrap/Card'
 import Form from 'react-bootstrap/Form'
 import Button from 'react-bootstrap/Button'
 import Alert from 'react-bootstrap/Alert'
-import { callApi } from '../api'
-import { saveLogin } from '../auth'
+import { callApi } from '../lib/api'
+import { saveLogin } from '../lib/auth'
 
 type LoginResult = {
   token: string
@@ -50,13 +50,17 @@ function Login() {
   }
 
   return (
-    <Container fluid className="min-vh-100 d-flex align-items-center justify-content-center">
+    <Container
+      fluid
+      className="min-vh-100 d-flex align-items-center justify-content-center bg-body-tertiary"
+    >
       <Row className="w-100">
         <Col xs={12} sm={8} md={5} lg={4} className="mx-auto">
-          <Card className="shadow-sm">
+          <Card className="shadow-sm border-0">
+            <Card.Header className="bg-primary text-white text-center py-3">
+              <span className="fs-5 fw-semibold">Solar Microgrid</span>
+            </Card.Header>
             <Card.Body className="p-4">
-              <h1 className="h4 mb-4 text-center">Solar Microgrid</h1>
-
               {error && <Alert variant="danger">{error}</Alert>}
 
               <Form onSubmit={handleSubmit}>

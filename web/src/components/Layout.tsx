@@ -3,7 +3,7 @@ import Navbar from 'react-bootstrap/Navbar'
 import Container from 'react-bootstrap/Container'
 import Button from 'react-bootstrap/Button'
 import { useNavigate } from 'react-router'
-import { getUser, logout } from '../auth'
+import { getUser, logout } from '../lib/auth'
 
 type LayoutProps = {
   children: ReactNode
@@ -22,13 +22,13 @@ function Layout({ children }: LayoutProps) {
 
   return (
     <>
-      <Navbar bg="light" className="border-bottom mb-4">
+      <Navbar bg="primary" variant="dark" className="mb-4">
         <Container className="justify-content-between">
-          <Navbar.Brand>Solar Microgrid</Navbar.Brand>
+          <Navbar.Brand className="fw-semibold">Solar Microgrid</Navbar.Brand>
           {user && (
             <div className="d-flex align-items-center gap-3">
-              <span>{user.fullName}</span>
-              <Button variant="outline-secondary" size="sm" onClick={handleLogout}>
+              <span className="text-white">{user.fullName}</span>
+              <Button variant="outline-light" size="sm" onClick={handleLogout}>
                 Log out
               </Button>
             </div>
