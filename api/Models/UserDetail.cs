@@ -12,11 +12,13 @@ public class UserDetail
     [BsonId]
     public string Id { get; set; } = "";
 
-    // only prosumers have a nic
-    public string Nic { get; set; } = "";
+    // only prosumers have a nic, left out of the document for anyone else
+    [BsonIgnoreIfNull]
+    public string? Nic { get; set; }
 
-    // only backoffice and grid operator have an email
-    public string Email { get; set; } = "";
+    // only backoffice and grid operator have an email, left out of the document for anyone else
+    [BsonIgnoreIfNull]
+    public string? Email { get; set; }
 
     public string Role { get; set; } = "";
 
