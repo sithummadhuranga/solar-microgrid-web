@@ -6,6 +6,9 @@ import AdminHome from './pages/admin/AdminHome'
 import OperatorHome from './pages/operator/OperatorHome'
 import Stations from './pages/admin/Stations'
 import StationSlots from './pages/admin/StationSlots'
+import Users from './pages/admin/Users'
+import Prosumers from './pages/admin/Prosumers'
+import PendingActivations from './pages/admin/PendingActivations'
 import ReservationsPage from './pages/reservations/ReservationsPage'
 import RequireRole from './components/RequireRole'
 
@@ -35,6 +38,30 @@ function App() {
         element={
           <RequireRole role="Backoffice">
             <StationSlots />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <RequireRole role="Backoffice">
+            <Users />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/admin/prosumers"
+        element={
+          <RequireRole role="Backoffice">
+            <Prosumers />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/admin/pending-activations"
+        element={
+          <RequireRole role="Backoffice">
+            <PendingActivations />
           </RequireRole>
         }
       />
