@@ -22,7 +22,7 @@ public class SlotsController : ControllerBase
         this.service = service;
     }
 
-    // lists the slots of a station, prosumers only see slots that have not ended
+    // lists the slots of a station, prosumers only see slots that have not ended on active stations
     [HttpGet]
     public async Task<IActionResult> GetAll(string stationId)
     {

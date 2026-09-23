@@ -22,14 +22,14 @@ public class SlotService
         reservations = db.GetCollection<BsonDocument>("EnergyReservation");
     }
 
-    // gets the slots of a station in time order, or only the ones that have not ended
-    public async Task<(int Status, string? Error, List<EnergyBookingSlot>? Slots)> GetForStation(string stationId, bool upcomingOnly)
+    // gets the slots of a station in time order, prosumers only get slots that have not ended on active stations
+    public async Task<(int Status, string? Error, List<EnergyBookingSlot>? Slots)> GetForStation(string stationId, bool isProsumer)
     {
         var station = await stations.Find(s => s.Id == stationId).FirstOrDefaultAsync();
-        if (station == null) return (404, "Station not found", null);
+        if (station == null || (isProsumer && station.Status != "active")) return (404, "Station not found", null);
 
         var now = DateTime.UtcNow;
-        var list = upcomingOnly
+        var list = isProsumer
             ? await slots.Find(s => s.StationId == stationId && s.EndTime > now).SortBy(s => s.StartTime).ToListAsync()
             : await slots.Find(s => s.StationId == stationId).SortBy(s => s.StartTime).ToListAsync();
         return (200, null, list);
