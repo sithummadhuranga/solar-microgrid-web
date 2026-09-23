@@ -1,5 +1,5 @@
 // File: StationService.cs
-// Purpose: rules for creating, updating, deactivating, activating and deleting microgrid nodes
+// Purpose: rules for creating, updating, deactivating, activating and deleting microgrid nodes, and the sample nodes
 // Author: Christine Lowe
 
 using MongoDB.Driver;
@@ -106,6 +106,49 @@ public class StationService
 
         await stations.DeleteOneAsync(s => s.Id == id);
         return (200, null);
+    }
+
+    // adds sample nodes with a few slots each, only when there are no nodes yet
+    public async Task AddSampleData()
+    {
+        if (await stations.Find(_ => true).AnyAsync()) return;
+
+        var samples = new List<SolarStation>
+        {
+            new() { Name = "Colombo Fort Hub", Address = "Fort, Colombo 01", Latitude = 6.9344, Longitude = 79.8428, CapacityKwh = 120, BatterySlotCount = 10, OpeningTime = "06:00", ClosingTime = "20:00" },
+            new() { Name = "Malabe Solar Node", Address = "New Kandy Road, Malabe", Latitude = 6.9147, Longitude = 79.9729, CapacityKwh = 80, BatterySlotCount = 6, OpeningTime = "07:00", ClosingTime = "19:00" },
+            new() { Name = "Kandy Lake Node", Address = "Dalada Veediya, Kandy", Latitude = 7.2936, Longitude = 80.6413, CapacityKwh = 60, BatterySlotCount = 5, OpeningTime = "06:30", ClosingTime = "18:30" },
+            new() { Name = "Galle Fort Node", Address = "Church Street, Galle", Latitude = 6.0269, Longitude = 80.2170, CapacityKwh = 50, BatterySlotCount = 4, OpeningTime = "08:00", ClosingTime = "18:00" }
+        };
+
+        // slots start tomorrow so they can be booked within the 7 day limit
+        var tomorrow = DateTime.UtcNow.Date.AddDays(1);
+
+        foreach (var station in samples)
+        {
+            station.Id = Guid.NewGuid().ToString();
+            station.Status = "active";
+
+            var slotList = new List<EnergyBookingSlot>();
+            for (var day = 0; day < 3; day++)
+            {
+                foreach (var hour in new[] { 3, 7 })
+                {
+                    slotList.Add(new EnergyBookingSlot
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        StationId = station.Id,
+                        StartTime = tomorrow.AddDays(day).AddHours(hour),
+                        EndTime = tomorrow.AddDays(day).AddHours(hour + 3),
+                        TotalSlots = station.BatterySlotCount,
+                        AvailableSlots = station.BatterySlotCount
+                    });
+                }
+            }
+
+            await stations.InsertOneAsync(station);
+            await slots.InsertManyAsync(slotList);
+        }
     }
 
     // a reservation is active while it is pending or approved
