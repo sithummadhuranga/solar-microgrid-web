@@ -12,6 +12,8 @@ function AdminHome() {
       </Link>
       <Link to="/admin/reservations">Reservations</Link>
       <Link to="/admin/users">Web users</Link>
+      <Link to="/admin/prosumers">Prosumers</Link>
+      <Link to="/admin/pending-activations">Pending activations</Link>
     </Layout>
   )
 }
