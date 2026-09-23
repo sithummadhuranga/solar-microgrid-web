@@ -24,6 +24,8 @@ builder.Services.AddSingleton(sp =>
 
 builder.Services.AddSingleton<PasswordHasher<UserDetail>>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<StationService>();
+builder.Services.AddScoped<SlotService>();
 
 // checks the token on every request, and that the account is still active
 builder.Services
