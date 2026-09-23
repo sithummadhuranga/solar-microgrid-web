@@ -64,6 +64,8 @@ public class SlotService
         if (error != null) return (400, error, null);
 
         var timesChanged = changes.StartTime != slot.StartTime || changes.EndTime != slot.EndTime;
+        if (timesChanged && changes.StartTime <= DateTime.UtcNow)
+            return (400, "Start time must be in the future", null);
         if (timesChanged && await HasActiveReservations(id))
             return (400, "Slot has active reservations, its times cannot be changed", null);
 
