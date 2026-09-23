@@ -16,7 +16,8 @@ export async function callApi(path: string, method = 'GET', body: unknown = null
   const text = await res.text()
   const data = text ? JSON.parse(text) : null
 
-  if (res.status === 401) {
+  // only a signed in call can mean an expired session, a login attempt with no token is just a wrong password
+  if (res.status === 401 && token) {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     window.location.href = '/login'
