@@ -39,6 +39,7 @@ const emptyForm = {
   closingTime: '18:00',
 }
 
+// shows the node list, and the add and edit form for backoffice users
 function Stations() {
   const isBackoffice = getUser()?.role === 'Backoffice'
   const basePath = isBackoffice ? '/admin' : '/operator'
@@ -49,6 +50,7 @@ function Stations() {
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState('')
 
+  // loads the nodes once when the page opens
   useEffect(() => {
     loadStations()
   }, [])

@@ -39,6 +39,7 @@ function toInputValue(iso: string) {
   return local.toISOString().slice(0, 16)
 }
 
+// shows the slots of one node, with the slot form and the availability form
 function StationSlots() {
   const { id } = useParams()
   const isBackoffice = getUser()?.role === 'Backoffice'
@@ -53,6 +54,7 @@ function StationSlots() {
   const [availabilitySlot, setAvailabilitySlot] = useState<Slot | null>(null)
   const [available, setAvailable] = useState('')
 
+  // loads the node and its slots when the page opens or the node id changes
   useEffect(() => {
     loadStation()
     loadSlots()
