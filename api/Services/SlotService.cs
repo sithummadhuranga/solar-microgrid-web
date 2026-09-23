@@ -2,7 +2,6 @@
 // Purpose: rules for the booking slots of a station and their availability
 // Author: Christine Lowe
 
-using MongoDB.Bson;
 using MongoDB.Driver;
 using SolarMicrogrid.Api.Models;
 
@@ -12,14 +11,14 @@ public class SlotService
 {
     private readonly IMongoCollection<EnergyBookingSlot> slots;
     private readonly IMongoCollection<SolarStation> stations;
-    private readonly IMongoCollection<BsonDocument> reservations;
+    private readonly IMongoCollection<EnergyReservation> reservations;
 
     // gets the slot, station and reservation collections
     public SlotService(IMongoDatabase db)
     {
         slots = db.GetCollection<EnergyBookingSlot>("EnergyBookingSlots");
         stations = db.GetCollection<SolarStation>("SolarStationInfo");
-        reservations = db.GetCollection<BsonDocument>("EnergyReservation");
+        reservations = db.GetCollection<EnergyReservation>("EnergyReservation");
     }
 
     // gets the slots of a station in time order, prosumers only get slots that have not ended on active stations
@@ -107,9 +106,9 @@ public class SlotService
     // a reservation is active while it is pending or approved
     private async Task<bool> HasActiveReservations(string slotId)
     {
-        var filter = Builders<BsonDocument>.Filter.Eq("SlotId", slotId)
-            & Builders<BsonDocument>.Filter.In("State", new[] { "pending", "approved" });
-        return await reservations.Find(filter).AnyAsync();
+        return await reservations
+            .Find(r => r.SlotId == slotId && (r.State == "pending" || r.State == "approved"))
+            .AnyAsync();
     }
 
     // checks the slot fields against its station, returns an error message or null when they are fine
