@@ -24,6 +24,8 @@ builder.Services.AddSingleton(sp =>
 
 builder.Services.AddSingleton<PasswordHasher<UserDetail>>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<ProsumerService>();
 builder.Services.AddScoped<StationService>();
 builder.Services.AddScoped<SlotService>();
 builder.Services.AddScoped<ReservationService>();
