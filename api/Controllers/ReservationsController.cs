@@ -51,10 +51,10 @@ public class ReservationsController : ControllerBase
         return Ok(reservation);
     }
 
-    // updates a reservation, needs 12 hours notice
+    // updates the scheduled time of a reservation, needs 12 hours notice
     [HttpPut("{id}")]
     [Authorize(Roles = "Prosumer,Backoffice,GridOperator")]
-    public async Task<IActionResult> Update(string id, ReservationRequest request)
+    public async Task<IActionResult> Update(string id, ReservationTimeRequest request)
     {
         var callerId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var callerRole = User.FindFirstValue(ClaimTypes.Role)!;
