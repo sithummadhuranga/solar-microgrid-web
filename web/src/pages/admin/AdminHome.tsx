@@ -11,6 +11,7 @@ function AdminHome() {
         Microgrid nodes
       </Link>
       <Link to="/admin/reservations">Reservations</Link>
+      <Link to="/admin/users">Web users</Link>
     </Layout>
   )
 }
