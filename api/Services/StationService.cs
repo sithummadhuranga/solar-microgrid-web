@@ -1,5 +1,5 @@
 // File: StationService.cs
-// Purpose: rules for creating, updating, deactivating and activating microgrid nodes
+// Purpose: rules for creating, updating, deactivating, activating and deleting microgrid nodes
 // Author: Christine Lowe
 
 using MongoDB.Bson;
@@ -11,12 +11,14 @@ namespace SolarMicrogrid.Api.Services;
 public class StationService
 {
     private readonly IMongoCollection<SolarStation> stations;
+    private readonly IMongoCollection<EnergyBookingSlot> slots;
     private readonly IMongoCollection<BsonDocument> reservations;
 
-    // gets the station and reservation collections
+    // gets the station, slot and reservation collections
     public StationService(IMongoDatabase db)
     {
         stations = db.GetCollection<SolarStation>("SolarStationInfo");
+        slots = db.GetCollection<EnergyBookingSlot>("EnergyBookingSlots");
         reservations = db.GetCollection<BsonDocument>("EnergyReservation");
     }
 
@@ -84,6 +86,22 @@ public class StationService
         if (station.Status == "active") return (400, "Station is already active");
 
         await stations.UpdateOneAsync(s => s.Id == id, Builders<SolarStation>.Update.Set(s => s.Status, "active"));
+        return (200, null);
+    }
+
+    // deletes a station, only when it has no slots and no reservations at all
+    public async Task<(int Status, string? Error)> Delete(string id)
+    {
+        var station = await Get(id);
+        if (station == null) return (404, "Station not found");
+
+        if (await slots.Find(s => s.StationId == id).AnyAsync())
+            return (400, "Station has slots, delete them first or deactivate the station");
+
+        if (await reservations.Find(Builders<BsonDocument>.Filter.Eq("StationId", id)).AnyAsync())
+            return (400, "Station has reservations, deactivate it instead");
+
+        await stations.DeleteOneAsync(s => s.Id == id);
         return (200, null);
     }
 

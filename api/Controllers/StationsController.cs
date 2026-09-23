@@ -83,4 +83,15 @@ public class StationsController : ControllerBase
 
         return Ok();
     }
+
+    // deletes a station that has no slots and no reservations
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Backoffice")]
+    public async Task<IActionResult> Delete(string id)
+    {
+        var (status, error) = await service.Delete(id);
+        if (error != null) return StatusCode(status, new { message = error });
+
+        return Ok();
+    }
 }

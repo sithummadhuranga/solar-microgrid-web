@@ -1,4 +1,4 @@
-// backoffice page to list, add, edit, deactivate and activate microgrid nodes
+// backoffice page to list, add, edit, deactivate, activate and delete microgrid nodes
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router'
@@ -136,6 +136,19 @@ function Stations() {
     }
   }
 
+  // deletes a station after the user confirms
+  async function handleDelete(station: Station) {
+    if (!window.confirm(`Delete ${station.name}? This cannot be undone.`)) return
+    setError('')
+
+    try {
+      await callApi(`/api/stations/${station.id}`, 'DELETE')
+      loadStations()
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
+
   return (
     <Layout>
       <div className="d-flex justify-content-between align-items-center mb-3">
@@ -190,6 +203,9 @@ function Stations() {
                     Activate
                   </Button>
                 )}
+                <Button size="sm" variant="outline-danger" className="ms-2" onClick={() => handleDelete(station)}>
+                  Delete
+                </Button>
               </td>
             </tr>
           ))}
