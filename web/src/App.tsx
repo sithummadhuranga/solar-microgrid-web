@@ -4,6 +4,8 @@ import Home from './pages/Home'
 import Login from './pages/auth/Login'
 import AdminHome from './pages/admin/AdminHome'
 import OperatorHome from './pages/operator/OperatorHome'
+import Stations from './pages/admin/Stations'
+import StationSlots from './pages/admin/StationSlots'
 import RequireRole from './components/RequireRole'
 
 function App() {
@@ -16,6 +18,22 @@ function App() {
         element={
           <RequireRole role="Backoffice">
             <AdminHome />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/admin/stations"
+        element={
+          <RequireRole role="Backoffice">
+            <Stations />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/admin/stations/:id/slots"
+        element={
+          <RequireRole role="Backoffice">
+            <StationSlots />
           </RequireRole>
         }
       />
