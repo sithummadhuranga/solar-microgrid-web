@@ -1,3 +1,6 @@
+// File: SolarStation.cs
+// Purpose: one microgrid node, saved in the SolarStationInfo collection
+
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace SolarMicrogrid.Api.Models;
