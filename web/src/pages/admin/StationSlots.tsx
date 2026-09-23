@@ -1,6 +1,6 @@
 // backoffice page to list, add, edit and delete the booking slots of one microgrid node
 // grid operators get the same list but can only change how many battery slots are free
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useParams } from 'react-router'
 import Table from 'react-bootstrap/Table'
@@ -54,29 +54,25 @@ function StationSlots() {
   const [availabilitySlot, setAvailabilitySlot] = useState<Slot | null>(null)
   const [available, setAvailable] = useState('')
 
+  // loads the node so the page can show its name
+  const loadStation = useCallback(() => {
+    callApi(`/api/stations/${id}`)
+      .then(setStation)
+      .catch((err: Error) => setError(err.message))
+  }, [id])
+
+  // loads the slots of the node
+  const loadSlots = useCallback(() => {
+    callApi(`/api/stations/${id}/slots`)
+      .then(setSlots)
+      .catch((err: Error) => setError(err.message))
+  }, [id])
+
   // loads the node and its slots when the page opens or the node id changes
   useEffect(() => {
     loadStation()
     loadSlots()
-  }, [id])
-
-  // loads the node so the page can show its name
-  async function loadStation() {
-    try {
-      setStation(await callApi(`/api/stations/${id}`))
-    } catch (err) {
-      setError((err as Error).message)
-    }
-  }
-
-  // loads the slots of the node
-  async function loadSlots() {
-    try {
-      setSlots(await callApi(`/api/stations/${id}/slots`))
-    } catch (err) {
-      setError((err as Error).message)
-    }
-  }
+  }, [loadStation, loadSlots])
 
   // opens an empty form for a new slot
   function openAdd() {
