@@ -34,6 +34,7 @@ function ReservationsPage() {
   const [scheduledTime, setScheduledTime] = useState('')
   const [createError, setCreateError] = useState('')
   const [createMessage, setCreateMessage] = useState('')
+  const [createdReservation, setCreatedReservation] = useState<Reservation | null>(null)
 
   const [lookupId, setLookupId] = useState('')
   const [reservation, setReservation] = useState<Reservation | null>(null)
@@ -46,15 +47,17 @@ function ReservationsPage() {
     e.preventDefault()
     setCreateError('')
     setCreateMessage('')
+    setCreatedReservation(null)
 
     try {
-      await callApi('/api/reservations', 'POST', {
+      const result: Reservation = await callApi('/api/reservations', 'POST', {
         nic,
         stationId,
         slotId,
         scheduledTime: new Date(scheduledTime).toISOString(),
       })
       setCreateMessage('Reservation saved')
+      setCreatedReservation(result)
       setNic('')
       setStationId('')
       setSlotId('')
@@ -131,9 +134,9 @@ function ReservationsPage() {
                   {createError}
                 </Alert>
               )}
-              {createMessage && (
+              {createMessage && createdReservation && (
                 <Alert variant="success" className="py-2">
-                  {createMessage}
+                  {createMessage}, id {createdReservation.id}
                 </Alert>
               )}
 
