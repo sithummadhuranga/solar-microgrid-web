@@ -63,8 +63,8 @@ public class ReservationService
         return (200, null, reservation);
     }
 
-    // updates a reservation, needs 12 hours notice and the new time must be within 7 days
-    public async Task<(int Status, string? Error, EnergyReservation? Reservation)> Update(string id, ReservationRequest request, string callerId, string callerRole)
+    // updates the scheduled time of a reservation, needs 12 hours notice and the new time must be within 7 days
+    public async Task<(int Status, string? Error, EnergyReservation? Reservation)> Update(string id, ReservationTimeRequest request, string callerId, string callerRole)
     {
         var (status, error, reservation) = await GetById(id, callerId, callerRole);
         if (error != null) return (status, error, null);
@@ -75,8 +75,6 @@ public class ReservationService
         if (request.ScheduledTime < DateTime.UtcNow || request.ScheduledTime > DateTime.UtcNow.AddDays(7))
             return (400, "Reservations must be scheduled within 7 days", null);
 
-        reservation.StationId = request.StationId;
-        reservation.SlotId = request.SlotId;
         reservation.ScheduledTime = request.ScheduledTime;
 
         await reservations.ReplaceOneAsync(r => r.Id == id, reservation);

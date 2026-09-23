@@ -37,8 +37,6 @@ function ReservationsPage() {
 
   const [lookupId, setLookupId] = useState('')
   const [reservation, setReservation] = useState<Reservation | null>(null)
-  const [editStationId, setEditStationId] = useState('')
-  const [editSlotId, setEditSlotId] = useState('')
   const [editScheduledTime, setEditScheduledTime] = useState('')
   const [editError, setEditError] = useState('')
   const [editMessage, setEditMessage] = useState('')
@@ -76,8 +74,6 @@ function ReservationsPage() {
     try {
       const result: Reservation = await callApi(`/api/reservations/${lookupId}`)
       setReservation(result)
-      setEditStationId(result.stationId)
-      setEditSlotId(result.slotId)
       setEditScheduledTime(toLocalInput(result.scheduledTime))
     } catch (err) {
       setEditError((err as Error).message)
@@ -93,8 +89,6 @@ function ReservationsPage() {
 
     try {
       const result: Reservation = await callApi(`/api/reservations/${reservation.id}`, 'PUT', {
-        stationId: editStationId,
-        slotId: editSlotId,
         scheduledTime: new Date(editScheduledTime).toISOString(),
       })
       setReservation(result)
@@ -206,20 +200,9 @@ function ReservationsPage() {
               {reservation && (
                 <Form onSubmit={handleUpdate}>
                   <p className="text-body-secondary mb-3">
-                    NIC {reservation.nic}, state {reservation.state}
+                    NIC {reservation.nic}, node {reservation.stationId}, slot {reservation.slotId}, state{' '}
+                    {reservation.state}
                   </p>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Microgrid node</Form.Label>
-                    <Form.Control
-                      value={editStationId}
-                      onChange={(e) => setEditStationId(e.target.value)}
-                      required
-                    />
-                  </Form.Group>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Slot</Form.Label>
-                    <Form.Control value={editSlotId} onChange={(e) => setEditSlotId(e.target.value)} required />
-                  </Form.Group>
                   <Form.Group className="mb-3">
                     <Form.Label>Scheduled time</Form.Label>
                     <Form.Control
