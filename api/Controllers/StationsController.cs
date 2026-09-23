@@ -1,7 +1,3 @@
-// File: StationsController.cs
-// Purpose: endpoints for microgrid nodes
-// Author: Christine Lowe
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SolarMicrogrid.Api.Models;

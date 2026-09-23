@@ -1,7 +1,3 @@
-// File: SolarStation.cs
-// Purpose: one microgrid node, saved in the SolarStationInfo collection
-// Author: Christine Lowe
-
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace SolarMicrogrid.Api.Models;

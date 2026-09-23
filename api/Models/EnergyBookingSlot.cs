@@ -1,7 +1,3 @@
-// File: EnergyBookingSlot.cs
-// Purpose: one time window at a station that prosumers can book, saved in the EnergyBookingSlots collection
-// Author: Christine Lowe
-
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace SolarMicrogrid.Api.Models;

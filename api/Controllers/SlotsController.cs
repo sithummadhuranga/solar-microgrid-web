@@ -1,7 +1,3 @@
-// File: SlotsController.cs
-// Purpose: endpoints for the booking slots of a station
-// Author: Christine Lowe
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SolarMicrogrid.Api.Models;

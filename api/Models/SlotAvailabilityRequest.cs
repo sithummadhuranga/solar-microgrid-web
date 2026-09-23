@@ -1,7 +1,3 @@
-// File: SlotAvailabilityRequest.cs
-// Purpose: what the slot availability endpoint reads from the request body
-// Author: Christine Lowe
-
 namespace SolarMicrogrid.Api.Models;
 
 public class SlotAvailabilityRequest
