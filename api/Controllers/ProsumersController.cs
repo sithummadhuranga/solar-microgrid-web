@@ -87,6 +87,18 @@ public class ProsumersController : ControllerBase
         return Ok(ToView(prosumer!));
     }
 
+    // the logged in prosumer changes their own password, the id comes from the token
+    [HttpPost("me/change-password")]
+    [Authorize(Roles = "Prosumer")]
+    public async Task<IActionResult> ChangeMyPassword(ProsumerPasswordRequest request)
+    {
+        var id = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var (status, error) = await service.ChangePassword(id, request);
+        if (error != null) return StatusCode(status, new { message = error });
+
+        return Ok();
+    }
+
     // the logged in prosumer asks to be deactivated, backoffice still has to act on it
     [HttpPost("me/deactivate-request")]
     [Authorize(Roles = "Prosumer")]

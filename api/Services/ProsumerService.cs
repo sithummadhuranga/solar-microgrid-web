@@ -106,6 +106,21 @@ public class ProsumerService
         return (200, null, prosumer);
     }
 
+    // a prosumer changes their own password, checks the current password first
+    public async Task<(int Status, string? Error)> ChangePassword(string id, ProsumerPasswordRequest request)
+    {
+        var prosumer = await Get(id);
+        if (prosumer == null) return (404, "Prosumer not found");
+        if (string.IsNullOrWhiteSpace(request.NewPassword)) return (400, "New password is required");
+
+        if (hasher.VerifyHashedPassword(prosumer, prosumer.PasswordHash, request.CurrentPassword) == PasswordVerificationResult.Failed)
+            return (400, "Current password is wrong");
+
+        var newHash = hasher.HashPassword(prosumer, request.NewPassword);
+        await users.UpdateOneAsync(u => u.Id == id, Builders<UserDetail>.Update.Set(u => u.PasswordHash, newHash));
+        return (200, null);
+    }
+
     // marks that a prosumer asked to be deactivated, backoffice still has to act on it
     public async Task<(int Status, string? Error)> RequestDeactivation(string id)
     {
