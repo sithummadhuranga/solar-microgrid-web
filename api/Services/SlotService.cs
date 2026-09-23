@@ -106,7 +106,7 @@ public class SlotService
     private async Task<bool> HasActiveReservations(string slotId)
     {
         var filter = Builders<BsonDocument>.Filter.Eq("SlotId", slotId)
-            & Builders<BsonDocument>.Filter.In("Status", new[] { "pending", "approved" });
+            & Builders<BsonDocument>.Filter.In("State", new[] { "pending", "approved" });
         return await reservations.Find(filter).AnyAsync();
     }
 
