@@ -1,4 +1,5 @@
 // backoffice page to list, add, edit and delete the booking slots of one microgrid node
+// grid operators get the same list but can only change how many battery slots are free
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useParams } from 'react-router'
@@ -11,6 +12,7 @@ import Col from 'react-bootstrap/Col'
 import Alert from 'react-bootstrap/Alert'
 import Layout from '../../components/Layout'
 import { callApi } from '../../lib/api'
+import { getUser } from '../../lib/auth'
 
 type Slot = {
   id: string
@@ -39,6 +41,8 @@ function toInputValue(iso: string) {
 
 function StationSlots() {
   const { id } = useParams()
+  const isBackoffice = getUser()?.role === 'Backoffice'
+  const basePath = isBackoffice ? '/admin' : '/operator'
   const [station, setStation] = useState<Station | null>(null)
   const [slots, setSlots] = useState<Slot[]>([])
   const [error, setError] = useState('')
@@ -151,18 +155,20 @@ function StationSlots() {
 
   return (
     <Layout>
-      <Link to="/admin/stations">Back to microgrid nodes</Link>
+      <Link to={`${basePath}/stations`}>Back to microgrid nodes</Link>
       <div className="d-flex justify-content-between align-items-center mt-2 mb-3">
         <h1 className="fw-semibold mb-0">Slots for {station?.name}</h1>
-        <Button onClick={openAdd} disabled={station?.status !== 'active'}>
-          Add slot
-        </Button>
+        {isBackoffice && (
+          <Button onClick={openAdd} disabled={station?.status !== 'active'}>
+            Add slot
+          </Button>
+        )}
       </div>
 
       {station && (
         <p className="text-body-secondary">
           This node has {station.batterySlotCount} battery storage slots.
-          {station.status !== 'active' && ' It is deactivated, so no new slots can be added.'}
+          {isBackoffice && station.status !== 'active' && ' It is deactivated, so no new slots can be added.'}
         </p>
       )}
 
@@ -189,12 +195,16 @@ function StationSlots() {
                 <Button size="sm" variant="outline-primary" className="me-2" onClick={() => openAvailability(slot)}>
                   Availability
                 </Button>
-                <Button size="sm" variant="outline-secondary" className="me-2" onClick={() => openEdit(slot)}>
-                  Edit
-                </Button>
-                <Button size="sm" variant="danger" onClick={() => handleDelete(slot)}>
-                  Delete
-                </Button>
+                {isBackoffice && (
+                  <>
+                    <Button size="sm" variant="outline-secondary" className="me-2" onClick={() => openEdit(slot)}>
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="danger" onClick={() => handleDelete(slot)}>
+                      Delete
+                    </Button>
+                  </>
+                )}
               </td>
             </tr>
           ))}

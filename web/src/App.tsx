@@ -47,6 +47,22 @@ function App() {
         }
       />
       <Route
+        path="/operator/stations"
+        element={
+          <RequireRole role="GridOperator">
+            <Stations />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/operator/stations/:id/slots"
+        element={
+          <RequireRole role="GridOperator">
+            <StationSlots />
+          </RequireRole>
+        }
+      />
+      <Route
         path="/admin/reservations"
         element={
           <RequireRole role="Backoffice">

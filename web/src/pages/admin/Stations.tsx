@@ -1,4 +1,5 @@
 // backoffice page to list, add, edit, deactivate, activate and delete microgrid nodes
+// grid operators get the same list read only, with a link to each node's slots
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router'
@@ -12,6 +13,7 @@ import Alert from 'react-bootstrap/Alert'
 import Badge from 'react-bootstrap/Badge'
 import Layout from '../../components/Layout'
 import { callApi } from '../../lib/api'
+import { getUser } from '../../lib/auth'
 
 type Station = {
   id: string
@@ -38,6 +40,8 @@ const emptyForm = {
 }
 
 function Stations() {
+  const isBackoffice = getUser()?.role === 'Backoffice'
+  const basePath = isBackoffice ? '/admin' : '/operator'
   const [stations, setStations] = useState<Station[]>([])
   const [error, setError] = useState('')
   const [showForm, setShowForm] = useState(false)
@@ -153,7 +157,7 @@ function Stations() {
     <Layout>
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h1 className="fw-semibold mb-0">Microgrid nodes</h1>
-        <Button onClick={openAdd}>Add node</Button>
+        {isBackoffice && <Button onClick={openAdd}>Add node</Button>}
       </div>
 
       {error && <Alert variant="danger">{error}</Alert>}
@@ -188,24 +192,28 @@ function Stations() {
                 <Badge bg={station.status === 'active' ? 'success' : 'secondary'}>{station.status}</Badge>
               </td>
               <td className="text-nowrap">
-                <Link to={`/admin/stations/${station.id}/slots`} className="btn btn-sm btn-outline-primary me-2">
+                <Link to={`${basePath}/stations/${station.id}/slots`} className="btn btn-sm btn-outline-primary me-2">
                   Slots
                 </Link>
-                <Button size="sm" variant="outline-secondary" className="me-2" onClick={() => openEdit(station)}>
-                  Edit
-                </Button>
-                {station.status === 'active' ? (
-                  <Button size="sm" variant="danger" onClick={() => handleDeactivate(station)}>
-                    Deactivate
-                  </Button>
-                ) : (
-                  <Button size="sm" variant="success" onClick={() => handleActivate(station)}>
-                    Activate
-                  </Button>
+                {isBackoffice && (
+                  <>
+                    <Button size="sm" variant="outline-secondary" className="me-2" onClick={() => openEdit(station)}>
+                      Edit
+                    </Button>
+                    {station.status === 'active' ? (
+                      <Button size="sm" variant="danger" onClick={() => handleDeactivate(station)}>
+                        Deactivate
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="success" onClick={() => handleActivate(station)}>
+                        Activate
+                      </Button>
+                    )}
+                    <Button size="sm" variant="outline-danger" className="ms-2" onClick={() => handleDelete(station)}>
+                      Delete
+                    </Button>
+                  </>
                 )}
-                <Button size="sm" variant="outline-danger" className="ms-2" onClick={() => handleDelete(station)}>
-                  Delete
-                </Button>
               </td>
             </tr>
           ))}
