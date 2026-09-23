@@ -22,11 +22,11 @@ public class StationsController : ControllerBase
         this.service = service;
     }
 
-    // lists stations, prosumers only see the active ones
+    // lists stations, prosumers only see the active ones, ?active=true gives only active ones to anyone
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] bool active = false)
     {
-        var stations = await service.GetAll(User.IsInRole("Prosumer"));
+        var stations = await service.GetAll(active || User.IsInRole("Prosumer"));
         return Ok(stations);
     }
 
