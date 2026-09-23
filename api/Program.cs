@@ -27,6 +27,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<StationService>();
 builder.Services.AddScoped<SlotService>();
 builder.Services.AddScoped<ReservationService>();
+builder.Services.AddScoped<ReservationViewService>();
 
 // checks the token on every request, and that the account is still active
 builder.Services
