@@ -113,7 +113,7 @@ public class StationService
     private async Task<bool> HasActiveReservations(string stationId)
     {
         var filter = Builders<BsonDocument>.Filter.Eq("StationId", stationId)
-            & Builders<BsonDocument>.Filter.In("Status", new[] { "pending", "approved" });
+            & Builders<BsonDocument>.Filter.In("State", new[] { "pending", "approved" });
         return await reservations.Find(filter).AnyAsync();
     }
 
