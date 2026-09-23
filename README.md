@@ -28,7 +28,7 @@ Every member commits from their own account, small steps, short lower case commi
 |---|---|---|
 | 1 | | |
 | 2 | | |
-| 3 | | |
+| 3 | Sathush Nanayakkara | |
 | 4 | | |
 
 ## Hosting on IIS

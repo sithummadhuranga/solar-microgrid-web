@@ -6,6 +6,7 @@ import AdminHome from './pages/admin/AdminHome'
 import OperatorHome from './pages/operator/OperatorHome'
 import Stations from './pages/admin/Stations'
 import StationSlots from './pages/admin/StationSlots'
+import ReservationsPage from './pages/reservations/ReservationsPage'
 import RequireRole from './components/RequireRole'
 
 function App() {
@@ -42,6 +43,22 @@ function App() {
         element={
           <RequireRole role="GridOperator">
             <OperatorHome />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/admin/reservations"
+        element={
+          <RequireRole role="Backoffice">
+            <ReservationsPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/operator/reservations"
+        element={
+          <RequireRole role="GridOperator">
+            <ReservationsPage />
           </RequireRole>
         }
       />

@@ -489,3 +489,7 @@ dist/
 
 # api production settings
 appsettings.Production.json
+
+# scope and skill files are fixed, do not add here
+PROJECT_SCOPE.md
+.claude/skills/solar-microgrid-dev/SKILL.md

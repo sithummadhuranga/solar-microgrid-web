@@ -10,6 +10,7 @@ function AdminHome() {
       <Link to="/admin/stations" className="btn btn-primary">
         Microgrid nodes
       </Link>
+      <Link to="/admin/reservations">Reservations</Link>
     </Layout>
   )
 }
