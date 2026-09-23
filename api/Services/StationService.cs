@@ -58,6 +58,10 @@ public class StationService
         var error = Check(changes);
         if (error != null) return (400, error, null);
 
+        // a slot cannot offer more battery storage slots than its station has
+        if (await slots.Find(s => s.StationId == id && s.TotalSlots > changes.BatterySlotCount).AnyAsync())
+            return (400, "Some slots use more battery storage slots than that, change those slots first", null);
+
         changes.Id = station.Id;
         changes.Status = station.Status;
         await stations.ReplaceOneAsync(s => s.Id == id, changes);

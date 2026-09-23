@@ -53,7 +53,7 @@ public class SlotService
         return (201, null, slot);
     }
 
-    // changes the times and size of a slot, free slots go down if the total goes below them
+    // changes the times and size of a slot, times are locked while it has active reservations
     public async Task<(int Status, string? Error, EnergyBookingSlot? Slot)> Update(string stationId, string id, EnergyBookingSlot changes)
     {
         var slot = await slots.Find(s => s.Id == id && s.StationId == stationId).FirstOrDefaultAsync();
@@ -62,6 +62,10 @@ public class SlotService
         var station = await stations.Find(s => s.Id == stationId).FirstOrDefaultAsync();
         var error = Check(changes, station!);
         if (error != null) return (400, error, null);
+
+        var timesChanged = changes.StartTime != slot.StartTime || changes.EndTime != slot.EndTime;
+        if (timesChanged && await HasActiveReservations(id))
+            return (400, "Slot has active reservations, its times cannot be changed", null);
 
         slot.StartTime = changes.StartTime;
         slot.EndTime = changes.EndTime;
@@ -91,14 +95,19 @@ public class SlotService
         var slot = await slots.Find(s => s.Id == id && s.StationId == stationId).FirstOrDefaultAsync();
         if (slot == null) return (404, "Slot not found");
 
-        // a reservation is active while it is pending or approved
-        var filter = Builders<BsonDocument>.Filter.Eq("SlotId", id)
-            & Builders<BsonDocument>.Filter.In("Status", new[] { "pending", "approved" });
-        if (await reservations.Find(filter).AnyAsync())
+        if (await HasActiveReservations(id))
             return (400, "Slot has active reservations and cannot be deleted");
 
         await slots.DeleteOneAsync(s => s.Id == id);
         return (200, null);
+    }
+
+    // a reservation is active while it is pending or approved
+    private async Task<bool> HasActiveReservations(string slotId)
+    {
+        var filter = Builders<BsonDocument>.Filter.Eq("SlotId", slotId)
+            & Builders<BsonDocument>.Filter.In("Status", new[] { "pending", "approved" });
+        return await reservations.Find(filter).AnyAsync();
     }
 
     // checks the slot fields against its station, returns an error message or null when they are fine
