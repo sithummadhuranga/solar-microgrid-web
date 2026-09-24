@@ -78,4 +78,15 @@ public class ReservationsController : ControllerBase
 
         return Ok(reservation);
     }
+
+    // approves a pending reservation and generates its qr code
+    [HttpPost("{id}/approve")]
+    [Authorize(Roles = "Backoffice,GridOperator")]
+    public async Task<IActionResult> Approve(string id)
+    {
+        var (status, error, reservation) = await service.Approve(id);
+        if (error != null) return StatusCode(status, new { message = error });
+
+        return Ok(reservation);
+    }
 }

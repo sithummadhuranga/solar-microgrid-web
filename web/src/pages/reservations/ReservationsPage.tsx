@@ -1,4 +1,4 @@
-// creates, updates and cancels reservations, for backoffice and grid operator
+// creates, updates, cancels and approves reservations, for backoffice and grid operator
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import Row from 'react-bootstrap/Row'
@@ -27,6 +27,7 @@ function toLocalInput(iso: string) {
   return local.toISOString().slice(0, 16)
 }
 
+// shows the new reservation form and the find, change, cancel and approve panel
 function ReservationsPage() {
   const [nic, setNic] = useState('')
   const [stationId, setStationId] = useState('')
@@ -47,11 +48,19 @@ function ReservationsPage() {
     setCreateError('')
     setCreateMessage('')
 
+    const cleanNic = nic.trim()
+    const cleanStationId = stationId.trim()
+    const cleanSlotId = slotId.trim()
+    if (!cleanNic || !cleanStationId || !cleanSlotId || !scheduledTime) {
+      setCreateError('Fill in all fields')
+      return
+    }
+
     try {
       await callApi('/api/reservations', 'POST', {
-        nic,
-        stationId,
-        slotId,
+        nic: cleanNic,
+        stationId: cleanStationId,
+        slotId: cleanSlotId,
         scheduledTime: new Date(scheduledTime).toISOString(),
       })
       setCreateMessage('Reservation saved')
@@ -71,8 +80,14 @@ function ReservationsPage() {
     setEditMessage('')
     setReservation(null)
 
+    const cleanLookupId = lookupId.trim()
+    if (!cleanLookupId) {
+      setEditError('Enter a reservation id')
+      return
+    }
+
     try {
-      const result: Reservation = await callApi(`/api/reservations/${lookupId}`)
+      const result: Reservation = await callApi(`/api/reservations/${cleanLookupId}`)
       setReservation(result)
       setEditScheduledTime(toLocalInput(result.scheduledTime))
     } catch (err) {
@@ -86,6 +101,11 @@ function ReservationsPage() {
     if (!reservation) return
     setEditError('')
     setEditMessage('')
+
+    if (!editScheduledTime) {
+      setEditError('Pick a scheduled time')
+      return
+    }
 
     try {
       const result: Reservation = await callApi(`/api/reservations/${reservation.id}`, 'PUT', {
@@ -109,6 +129,21 @@ function ReservationsPage() {
       const result: Reservation = await callApi(`/api/reservations/${reservation.id}/cancel`, 'POST')
       setReservation(result)
       setEditMessage('Reservation cancelled')
+    } catch (err) {
+      setEditError((err as Error).message)
+    }
+  }
+
+  // approves the loaded reservation and generates its qr code
+  async function handleApprove() {
+    if (!reservation) return
+    setEditError('')
+    setEditMessage('')
+
+    try {
+      const result: Reservation = await callApi(`/api/reservations/${reservation.id}/approve`, 'POST')
+      setReservation(result)
+      setEditMessage('Reservation approved')
     } catch (err) {
       setEditError((err as Error).message)
     }
@@ -140,15 +175,15 @@ function ReservationsPage() {
               <Form onSubmit={handleCreate}>
                 <Form.Group className="mb-3">
                   <Form.Label>NIC</Form.Label>
-                  <Form.Control value={nic} onChange={(e) => setNic(e.target.value)} required />
+                  <Form.Control value={nic} maxLength={20} onChange={(e) => setNic(e.target.value)} required />
                 </Form.Group>
                 <Form.Group className="mb-3">
                   <Form.Label>Microgrid node</Form.Label>
-                  <Form.Control value={stationId} onChange={(e) => setStationId(e.target.value)} required />
+                  <Form.Control value={stationId} maxLength={50} onChange={(e) => setStationId(e.target.value)} required />
                 </Form.Group>
                 <Form.Group className="mb-3">
                   <Form.Label>Slot</Form.Label>
-                  <Form.Control value={slotId} onChange={(e) => setSlotId(e.target.value)} required />
+                  <Form.Control value={slotId} maxLength={50} onChange={(e) => setSlotId(e.target.value)} required />
                 </Form.Group>
                 <Form.Group className="mb-3">
                   <Form.Label>Scheduled time</Form.Label>
@@ -177,6 +212,7 @@ function ReservationsPage() {
               <Form onSubmit={handleLookup} className="d-flex gap-2 mb-3">
                 <Form.Control
                   placeholder="Reservation id"
+                  maxLength={50}
                   value={lookupId}
                   onChange={(e) => setLookupId(e.target.value)}
                   required
@@ -219,6 +255,11 @@ function ReservationsPage() {
                     <Button type="button" variant="danger" onClick={handleCancel}>
                       Cancel reservation
                     </Button>
+                    {reservation.state === 'pending' && (
+                      <Button type="button" variant="success" onClick={handleApprove}>
+                        Approve
+                      </Button>
+                    )}
                   </div>
                 </Form>
               )}
