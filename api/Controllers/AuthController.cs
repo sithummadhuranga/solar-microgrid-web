@@ -2,6 +2,7 @@
 // Purpose: the login endpoint
 // Author: H.M.T.S.M.Dissanayake
 
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SolarMicrogrid.Api.Models;
@@ -36,6 +37,24 @@ public class AuthController : ControllerBase
             id = user!.Id,
             fullName = user.FullName,
             role = user.Role
+        });
+    }
+
+    // returns the real role and status for the logged in token, the page shell uses this to check
+    // a role a client only stored locally, never trust that copy on its own
+    [HttpGet("me")]
+    public async Task<IActionResult> Me()
+    {
+        var id = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var user = await service.GetById(id);
+        if (user == null) return NotFound();
+
+        return Ok(new
+        {
+            id = user.Id,
+            fullName = user.FullName,
+            role = user.Role,
+            status = user.Status
         });
     }
 }

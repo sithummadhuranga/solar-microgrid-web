@@ -76,6 +76,12 @@ public class AuthService
         return (200, null, MakeToken(user), user);
     }
 
+    // gets a user by id, used to check the real current role and status, never trust a role the client sent
+    public async Task<UserDetail?> GetById(string id)
+    {
+        return await users.Find(u => u.Id == id).FirstOrDefaultAsync();
+    }
+
     // builds the token the user keeps after logging in
     private string MakeToken(UserDetail user)
     {
