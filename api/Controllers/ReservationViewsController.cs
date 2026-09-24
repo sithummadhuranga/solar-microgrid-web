@@ -32,6 +32,14 @@ public class ReservationViewsController : ControllerBase
         return Ok(await service.ListMine(callerId, state, search));
     }
 
+    // lists every reservation so staff can monitor bookings, state is a comma separated list
+    [HttpGet]
+    [Authorize(Roles = "Backoffice,GridOperator")]
+    public async Task<IActionResult> All(string state = "", string search = "")
+    {
+        return Ok(await service.ListAll(state, search));
+    }
+
     // gives the dashboard its pending count and its approved future count
     [HttpGet("summary")]
     [Authorize(Roles = "Prosumer")]
