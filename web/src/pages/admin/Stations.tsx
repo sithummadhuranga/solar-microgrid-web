@@ -49,6 +49,8 @@ function Stations() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState('')
+  const [deactivating, setDeactivating] = useState<Station | null>(null)
+  const [deactivateError, setDeactivateError] = useState('')
 
   // loads the nodes once when the page opens
   useEffect(() => {
@@ -117,16 +119,22 @@ function Stations() {
     }
   }
 
-  // deactivates a station after the user confirms
-  async function handleDeactivate(station: Station) {
-    if (!window.confirm(`Deactivate ${station.name}?`)) return
-    setError('')
+  // opens the box that asks the user to confirm the deactivation
+  function handleDeactivate(station: Station) {
+    setDeactivateError('')
+    setDeactivating(station)
+  }
+
+  // deactivates the station once the user clicks yes, keeps the box open to show the api message if it is refused
+  async function confirmDeactivate() {
+    setDeactivateError('')
 
     try {
-      await callApi(`/api/stations/${station.id}/deactivate`, 'POST')
+      await callApi(`/api/stations/${deactivating!.id}/deactivate`, 'POST')
+      setDeactivating(null)
       loadStations()
     } catch (err) {
-      setError((err as Error).message)
+      setDeactivateError((err as Error).message)
     }
   }
 
@@ -320,6 +328,24 @@ function Stations() {
             <Button type="submit">Save</Button>
           </Modal.Footer>
         </Form>
+      </Modal>
+
+      <Modal show={deactivating !== null} onHide={() => setDeactivating(null)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Deactivate node</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {deactivateError && <Alert variant="danger">{deactivateError}</Alert>}
+          Are you sure you want to deactivate {deactivating?.name}?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setDeactivating(null)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={confirmDeactivate}>
+            Yes
+          </Button>
+        </Modal.Footer>
       </Modal>
     </Layout>
   )
