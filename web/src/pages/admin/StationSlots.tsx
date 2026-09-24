@@ -1,5 +1,6 @@
 // backoffice page to list, add, edit and delete the booking slots of one microgrid node
-import { useEffect, useState } from 'react'
+// grid operators get the same list but can only change how many battery slots are free
+import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useParams } from 'react-router'
 import Table from 'react-bootstrap/Table'
@@ -11,6 +12,7 @@ import Col from 'react-bootstrap/Col'
 import Alert from 'react-bootstrap/Alert'
 import Layout from '../../components/Layout'
 import { callApi } from '../../lib/api'
+import { getUser } from '../../lib/auth'
 
 type Slot = {
   id: string
@@ -37,8 +39,11 @@ function toInputValue(iso: string) {
   return local.toISOString().slice(0, 16)
 }
 
+// shows the slots of one node, with the slot form and the availability form
 function StationSlots() {
   const { id } = useParams()
+  const isBackoffice = getUser()?.role === 'Backoffice'
+  const basePath = isBackoffice ? '/admin' : '/operator'
   const [station, setStation] = useState<Station | null>(null)
   const [slots, setSlots] = useState<Slot[]>([])
   const [error, setError] = useState('')
@@ -48,29 +53,28 @@ function StationSlots() {
   const [formError, setFormError] = useState('')
   const [availabilitySlot, setAvailabilitySlot] = useState<Slot | null>(null)
   const [available, setAvailable] = useState('')
+  const [deletingSlot, setDeletingSlot] = useState<Slot | null>(null)
+  const [deleteError, setDeleteError] = useState('')
 
+  // loads the node so the page can show its name
+  const loadStation = useCallback(() => {
+    callApi(`/api/stations/${id}`)
+      .then(setStation)
+      .catch((err: Error) => setError(err.message))
+  }, [id])
+
+  // loads the slots of the node
+  const loadSlots = useCallback(() => {
+    callApi(`/api/stations/${id}/slots`)
+      .then(setSlots)
+      .catch((err: Error) => setError(err.message))
+  }, [id])
+
+  // loads the node and its slots when the page opens or the node id changes
   useEffect(() => {
     loadStation()
     loadSlots()
-  }, [id])
-
-  // loads the node so the page can show its name
-  async function loadStation() {
-    try {
-      setStation(await callApi(`/api/stations/${id}`))
-    } catch (err) {
-      setError((err as Error).message)
-    }
-  }
-
-  // loads the slots of the node
-  async function loadSlots() {
-    try {
-      setSlots(await callApi(`/api/stations/${id}/slots`))
-    } catch (err) {
-      setError((err as Error).message)
-    }
-  }
+  }, [loadStation, loadSlots])
 
   // opens an empty form for a new slot
   function openAdd() {
@@ -136,33 +140,41 @@ function StationSlots() {
     }
   }
 
-  // deletes a slot after the user confirms
-  async function handleDelete(slot: Slot) {
-    if (!window.confirm('Delete this slot?')) return
-    setError('')
+  // opens the box that asks the user to confirm the delete
+  function handleDelete(slot: Slot) {
+    setDeleteError('')
+    setDeletingSlot(slot)
+  }
+
+  // deletes the slot once the user clicks yes
+  async function confirmDelete() {
+    setDeleteError('')
 
     try {
-      await callApi(`/api/stations/${id}/slots/${slot.id}`, 'DELETE')
+      await callApi(`/api/stations/${id}/slots/${deletingSlot!.id}`, 'DELETE')
+      setDeletingSlot(null)
       loadSlots()
     } catch (err) {
-      setError((err as Error).message)
+      setDeleteError((err as Error).message)
     }
   }
 
   return (
     <Layout>
-      <Link to="/admin/stations">Back to microgrid nodes</Link>
+      <Link to={`${basePath}/stations`}>Back to microgrid nodes</Link>
       <div className="d-flex justify-content-between align-items-center mt-2 mb-3">
         <h1 className="fw-semibold mb-0">Slots for {station?.name}</h1>
-        <Button onClick={openAdd} disabled={station?.status !== 'active'}>
-          Add slot
-        </Button>
+        {isBackoffice && (
+          <Button onClick={openAdd} disabled={station?.status !== 'active'}>
+            Add slot
+          </Button>
+        )}
       </div>
 
       {station && (
         <p className="text-body-secondary">
           This node has {station.batterySlotCount} battery storage slots.
-          {station.status !== 'active' && ' It is deactivated, so no new slots can be added.'}
+          {isBackoffice && station.status !== 'active' && ' It is deactivated, so no new slots can be added.'}
         </p>
       )}
 
@@ -189,12 +201,16 @@ function StationSlots() {
                 <Button size="sm" variant="outline-primary" className="me-2" onClick={() => openAvailability(slot)}>
                   Availability
                 </Button>
-                <Button size="sm" variant="outline-secondary" className="me-2" onClick={() => openEdit(slot)}>
-                  Edit
-                </Button>
-                <Button size="sm" variant="danger" onClick={() => handleDelete(slot)}>
-                  Delete
-                </Button>
+                {isBackoffice && (
+                  <>
+                    <Button size="sm" variant="outline-secondary" className="me-2" onClick={() => openEdit(slot)}>
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="danger" onClick={() => handleDelete(slot)}>
+                      Delete
+                    </Button>
+                  </>
+                )}
               </td>
             </tr>
           ))}
@@ -276,6 +292,26 @@ function StationSlots() {
             <Button type="submit">Save</Button>
           </Modal.Footer>
         </Form>
+      </Modal>
+
+      <Modal show={deletingSlot !== null} onHide={() => setDeletingSlot(null)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete slot</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {deleteError && <Alert variant="danger">{deleteError}</Alert>}
+          Are you sure you want to delete the slot from{' '}
+          {deletingSlot && new Date(deletingSlot.startTime).toLocaleString()} to{' '}
+          {deletingSlot && new Date(deletingSlot.endTime).toLocaleString()}? This cannot be undone.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setDeletingSlot(null)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={confirmDelete}>
+            Yes
+          </Button>
+        </Modal.Footer>
       </Modal>
     </Layout>
   )

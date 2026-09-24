@@ -103,6 +103,10 @@ using (var scope = app.Services.CreateScope())
         admin.PasswordHash = hasher.HashPassword(admin, app.Configuration["Seed:BackofficePassword"]!);
         await users.InsertOneAsync(admin);
     }
+
+    // sample microgrid nodes and slots, only added when the node collection is empty
+    var stationService = scope.ServiceProvider.GetRequiredService<StationService>();
+    await stationService.AddSampleData();
 }
 
 // Configure the HTTP request pipeline.

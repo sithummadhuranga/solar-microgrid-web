@@ -22,7 +22,7 @@ public class StationsController : ControllerBase
         this.service = service;
     }
 
-    // lists stations, prosumers only see the active ones, ?active=true gives only active ones to anyone
+    // lists stations, prosumers and ?active=true get only the active ones
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] bool active = false)
     {

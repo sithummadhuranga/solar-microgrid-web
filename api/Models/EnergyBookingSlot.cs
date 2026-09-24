@@ -12,7 +12,6 @@ public class EnergyBookingSlot
     [BsonId]
     public string Id { get; set; } = "";
 
-    // id of the SolarStation this slot belongs to
     public string StationId { get; set; } = "";
 
     // start and end are stored in utc

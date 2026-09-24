@@ -23,6 +23,7 @@ const adminLinks = [
 
 const operatorLinks = [
   { to: '/operator', label: 'Home' },
+  { to: '/operator/stations', label: 'Microgrid nodes' },
   { to: '/operator/reservations', label: 'Reservations' },
 ]
 

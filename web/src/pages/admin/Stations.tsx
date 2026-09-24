@@ -1,4 +1,5 @@
 // backoffice page to list, add, edit, deactivate, activate and delete microgrid nodes
+// grid operators get the same list read only, with a link to each node's slots
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router'
@@ -12,6 +13,7 @@ import Alert from 'react-bootstrap/Alert'
 import Badge from 'react-bootstrap/Badge'
 import Layout from '../../components/Layout'
 import { callApi } from '../../lib/api'
+import { getUser } from '../../lib/auth'
 
 type Station = {
   id: string
@@ -37,14 +39,20 @@ const emptyForm = {
   closingTime: '18:00',
 }
 
+// shows the node list, and the add and edit form for backoffice users
 function Stations() {
+  const isBackoffice = getUser()?.role === 'Backoffice'
+  const basePath = isBackoffice ? '/admin' : '/operator'
   const [stations, setStations] = useState<Station[]>([])
   const [error, setError] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState('')
+  const [confirming, setConfirming] = useState<{ station: Station; action: 'deactivate' | 'delete' } | null>(null)
+  const [confirmError, setConfirmError] = useState('')
 
+  // loads the nodes once when the page opens
   useEffect(() => {
     loadStations()
   }, [])
@@ -111,16 +119,30 @@ function Stations() {
     }
   }
 
-  // deactivates a station after the user confirms
-  async function handleDeactivate(station: Station) {
-    if (!window.confirm(`Deactivate ${station.name}?`)) return
-    setError('')
+  // opens the box that asks the user to confirm the deactivation
+  function handleDeactivate(station: Station) {
+    setConfirmError('')
+    setConfirming({ station, action: 'deactivate' })
+  }
+
+  // opens the box that asks the user to confirm the delete
+  function handleDelete(station: Station) {
+    setConfirmError('')
+    setConfirming({ station, action: 'delete' })
+  }
+
+  // deactivates or deletes the station once the user clicks yes
+  async function confirmAction() {
+    const { station, action } = confirming!
+    setConfirmError('')
 
     try {
-      await callApi(`/api/stations/${station.id}/deactivate`, 'POST')
+      if (action === 'deactivate') await callApi(`/api/stations/${station.id}/deactivate`, 'POST')
+      else await callApi(`/api/stations/${station.id}`, 'DELETE')
+      setConfirming(null)
       loadStations()
     } catch (err) {
-      setError((err as Error).message)
+      setConfirmError((err as Error).message)
     }
   }
 
@@ -136,24 +158,12 @@ function Stations() {
     }
   }
 
-  // deletes a station after the user confirms
-  async function handleDelete(station: Station) {
-    if (!window.confirm(`Delete ${station.name}? This cannot be undone.`)) return
-    setError('')
-
-    try {
-      await callApi(`/api/stations/${station.id}`, 'DELETE')
-      loadStations()
-    } catch (err) {
-      setError((err as Error).message)
-    }
-  }
 
   return (
     <Layout>
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h1 className="fw-semibold mb-0">Microgrid nodes</h1>
-        <Button onClick={openAdd}>Add node</Button>
+        {isBackoffice && <Button onClick={openAdd}>Add node</Button>}
       </div>
 
       {error && <Alert variant="danger">{error}</Alert>}
@@ -188,24 +198,28 @@ function Stations() {
                 <Badge bg={station.status === 'active' ? 'success' : 'secondary'}>{station.status}</Badge>
               </td>
               <td className="text-nowrap">
-                <Link to={`/admin/stations/${station.id}/slots`} className="btn btn-sm btn-outline-primary me-2">
+                <Link to={`${basePath}/stations/${station.id}/slots`} className="btn btn-sm btn-outline-primary me-2">
                   Slots
                 </Link>
-                <Button size="sm" variant="outline-secondary" className="me-2" onClick={() => openEdit(station)}>
-                  Edit
-                </Button>
-                {station.status === 'active' ? (
-                  <Button size="sm" variant="danger" onClick={() => handleDeactivate(station)}>
-                    Deactivate
-                  </Button>
-                ) : (
-                  <Button size="sm" variant="success" onClick={() => handleActivate(station)}>
-                    Activate
-                  </Button>
+                {isBackoffice && (
+                  <>
+                    <Button size="sm" variant="outline-secondary" className="me-2" onClick={() => openEdit(station)}>
+                      Edit
+                    </Button>
+                    {station.status === 'active' ? (
+                      <Button size="sm" variant="danger" onClick={() => handleDeactivate(station)}>
+                        Deactivate
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="success" onClick={() => handleActivate(station)}>
+                        Activate
+                      </Button>
+                    )}
+                    <Button size="sm" variant="outline-danger" className="ms-2" onClick={() => handleDelete(station)}>
+                      Delete
+                    </Button>
+                  </>
                 )}
-                <Button size="sm" variant="outline-danger" className="ms-2" onClick={() => handleDelete(station)}>
-                  Delete
-                </Button>
               </td>
             </tr>
           ))}
@@ -310,6 +324,25 @@ function Stations() {
             <Button type="submit">Save</Button>
           </Modal.Footer>
         </Form>
+      </Modal>
+
+      <Modal show={confirming !== null} onHide={() => setConfirming(null)}>
+        <Modal.Header closeButton>
+          <Modal.Title>{confirming?.action === 'delete' ? 'Delete node' : 'Deactivate node'}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {confirmError && <Alert variant="danger">{confirmError}</Alert>}
+          Are you sure you want to {confirming?.action} {confirming?.station.name}?
+          {confirming?.action === 'delete' && ' This cannot be undone.'}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setConfirming(null)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={confirmAction}>
+            Yes
+          </Button>
+        </Modal.Footer>
       </Modal>
     </Layout>
   )
