@@ -22,11 +22,11 @@ public class SlotsController : ControllerBase
         this.service = service;
     }
 
-    // lists the slots of a station, prosumers only see slots that have not ended on active stations
+    // lists the slots of a station, prosumers only see slots that have not ended on active stations, ?upcoming=true gives only slots that have not ended to anyone
     [HttpGet]
-    public async Task<IActionResult> GetAll(string stationId)
+    public async Task<IActionResult> GetAll(string stationId, [FromQuery] bool upcoming = false)
     {
-        var (status, error, slots) = await service.GetForStation(stationId, User.IsInRole("Prosumer"));
+        var (status, error, slots) = await service.GetForStation(stationId, User.IsInRole("Prosumer"), upcoming);
         if (error != null) return StatusCode(status, new { message = error });
 
         return Ok(slots);
