@@ -40,8 +40,7 @@ public class AuthController : ControllerBase
         });
     }
 
-    // returns the real role and status for the logged in token, the page shell uses this to check
-    // a role a client only stored locally, never trust that copy on its own
+    // returns the real role and status for the logged in token, never trust a role from the client
     [HttpGet("me")]
     public async Task<IActionResult> Me()
     {

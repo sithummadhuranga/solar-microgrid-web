@@ -10,7 +10,7 @@ namespace SolarMicrogrid.Api.Services;
 
 public class ProsumerService
 {
-    // shortest password accepted, checked again here even though the client already checks it
+    // shortest password accepted
     private const int MinPasswordLength = 8;
 
     private readonly IMongoCollection<UserDetail> users;

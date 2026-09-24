@@ -71,7 +71,7 @@ function Users() {
     setForm({ ...form, [field]: value })
   }
 
-  // checks the form before it goes to the api, returns an error message or empty when it is fine
+  // checks the user form, returns an error message or empty
   function validate(): string {
     if (!emailPattern.test(form.email)) return 'Email is not a valid address'
 

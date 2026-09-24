@@ -16,8 +16,7 @@ export async function callApi(path: string, method = 'GET', body: unknown = null
   const text = await res.text()
   const data = text ? JSON.parse(text) : null
 
-  // only a signed in call can mean the session is no longer valid, a login attempt with no token
-  // just failed with the wrong password or platform, that is not a reason to log anyone out
+  // only log out a signed in call, an anonymous login attempt just failed the normal way
   if ((res.status === 401 || res.status === 403) && token) {
     localStorage.removeItem('token')
     localStorage.removeItem('user')

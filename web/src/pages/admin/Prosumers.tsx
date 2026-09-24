@@ -80,7 +80,7 @@ function Prosumers() {
     setForm({ ...form, [field]: value })
   }
 
-  // checks the new prosumer form before it goes to the api, returns an error message or empty when it is fine
+  // checks the new prosumer form, returns an error message or empty
   function validate(): string {
     if (editingId) return ''
     if (form.password.length < minPasswordLength) return `Password must be at least ${minPasswordLength} characters`

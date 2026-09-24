@@ -1,5 +1,4 @@
-// sends to login if nobody is logged in, or shows a message if the role does not match
-// checks the role with the api, a role only stored in the browser can be edited by the user
+// checks the role with the api, sends to login or shows a no access message
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Navigate } from 'react-router'
@@ -16,7 +15,7 @@ function RequireRole({ role, children }: RequireRoleProps) {
   const [checkedRole, setCheckedRole] = useState<string | null>(null)
   const [checked, setChecked] = useState(false)
 
-  // asks the api for the real role behind the token, ignores a role edited in local storage
+  // asks the api for the real role behind the token
   useEffect(() => {
     let cancelled = false
 

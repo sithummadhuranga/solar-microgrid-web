@@ -11,10 +11,10 @@ namespace SolarMicrogrid.Api.Services;
 
 public class UserService
 {
-    // shortest password accepted, checked again here even though the client already checks it
+    // shortest password accepted
     private const int MinPasswordLength = 8;
 
-    // a plain email shape, not a full spec, good enough to catch a typo
+    // a plain email shape, not a full spec
     private static readonly Regex EmailPattern = new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
 
     private readonly IMongoCollection<UserDetail> users;
