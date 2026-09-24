@@ -12,6 +12,7 @@ import Col from 'react-bootstrap/Col'
 import Alert from 'react-bootstrap/Alert'
 import Badge from 'react-bootstrap/Badge'
 import Layout from '../../components/Layout'
+import LocationPicker from '../../components/LocationPicker'
 import { callApi } from '../../lib/api'
 import { getUser } from '../../lib/auth'
 
@@ -94,6 +95,11 @@ function Stations() {
   // updates one field of the form
   function setField(field: keyof typeof emptyForm, value: string) {
     setForm({ ...form, [field]: value })
+  }
+
+  // sets the location from a pin placed or dragged on the map
+  function setLocation(latitude: number, longitude: number) {
+    setForm({ ...form, latitude: String(latitude), longitude: String(longitude) })
   }
 
   // sends the new or changed station to the api
@@ -251,26 +257,24 @@ function Stations() {
               <Form.Control value={form.address} onChange={(e) => setField('address', e.target.value)} required />
             </Form.Group>
 
+            <Form.Group className="mb-3">
+              <Form.Label>GPS location</Form.Label>
+              <LocationPicker
+                latitude={Number(form.latitude) || 0}
+                longitude={Number(form.longitude) || 0}
+                onChange={setLocation}
+              />
+              <Form.Text muted>Click the map or drag the pin to set the node's location.</Form.Text>
+            </Form.Group>
+
             <Row>
               <Form.Group as={Col} className="mb-3">
                 <Form.Label>Latitude</Form.Label>
-                <Form.Control
-                  type="number"
-                  step="any"
-                  value={form.latitude}
-                  onChange={(e) => setField('latitude', e.target.value)}
-                  required
-                />
+                <Form.Control type="number" step="any" value={form.latitude} readOnly required />
               </Form.Group>
               <Form.Group as={Col} className="mb-3">
                 <Form.Label>Longitude</Form.Label>
-                <Form.Control
-                  type="number"
-                  step="any"
-                  value={form.longitude}
-                  onChange={(e) => setField('longitude', e.target.value)}
-                  required
-                />
+                <Form.Control type="number" step="any" value={form.longitude} readOnly required />
               </Form.Group>
             </Row>
 
