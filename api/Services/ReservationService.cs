@@ -11,15 +11,19 @@ public class ReservationService
 {
     private readonly IMongoCollection<EnergyReservation> reservations;
     private readonly IMongoCollection<UserDetail> users;
+    private readonly IMongoCollection<SolarStation> stations;
+    private readonly IMongoCollection<EnergyBookingSlot> slots;
 
-    // gets the reservation and user collections
+    // gets the reservation, user, station and slot collections
     public ReservationService(IMongoDatabase db)
     {
         reservations = db.GetCollection<EnergyReservation>("EnergyReservation");
         users = db.GetCollection<UserDetail>("UserDetail");
+        stations = db.GetCollection<SolarStation>("SolarStationInfo");
+        slots = db.GetCollection<EnergyBookingSlot>("EnergyBookingSlots");
     }
 
-    // creates a reservation, must be scheduled within 7 days
+    // creates a reservation for an active node and one of its slots, must be scheduled within 7 days
     public async Task<(string? Error, EnergyReservation? Reservation)> Create(ReservationRequest request, string callerId, string callerRole)
     {
         var nic = request.Nic;
@@ -29,7 +33,24 @@ public class ReservationService
             nic = caller?.Nic;
         }
 
-        if (string.IsNullOrEmpty(nic)) return ("Prosumer nic is required", null);
+        if (string.IsNullOrWhiteSpace(nic)) return ("Prosumer nic is required", null);
+        if (string.IsNullOrWhiteSpace(request.StationId)) return ("Microgrid node is required", null);
+        if (string.IsNullOrWhiteSpace(request.SlotId)) return ("Slot is required", null);
+
+        // staff book for a nic they type, so it must belong to a real prosumer
+        if (callerRole != "Prosumer")
+        {
+            var prosumer = await users.Find(u => u.Role == "Prosumer" && u.Nic == nic).FirstOrDefaultAsync();
+            if (prosumer == null) return ("Prosumer not found", null);
+        }
+
+        var station = await stations.Find(s => s.Id == request.StationId).FirstOrDefaultAsync();
+        if (station == null) return ("Station not found", null);
+        if (station.Status != "active") return ("This microgrid node is not active", null);
+
+        // the slot must belong to the chosen node
+        var slot = await slots.Find(s => s.Id == request.SlotId && s.StationId == request.StationId).FirstOrDefaultAsync();
+        if (slot == null) return ("Slot not found", null);
 
         if (request.ScheduledTime < DateTime.UtcNow || request.ScheduledTime > DateTime.UtcNow.AddDays(7))
             return ("Reservations must be scheduled within 7 days", null);
@@ -57,19 +78,22 @@ public class ReservationService
         if (callerRole == "Prosumer")
         {
             var caller = await users.Find(u => u.Id == callerId).FirstOrDefaultAsync();
-            if (caller == null || reservation.Nic != caller.Nic) return (403, "Not your reservation", null);
+            if (caller == null || reservation.Nic != caller.Nic) return (404, "Reservation not found", null);
         }
 
         return (200, null, reservation);
     }
 
-    // updates the scheduled time of a reservation, needs 12 hours notice and the new time must be within 7 days
+    // updates the scheduled time of a pending or approved reservation, needs 12 hours notice and the new time must be within 7 days
     public async Task<(int Status, string? Error, EnergyReservation? Reservation)> Update(string id, ReservationTimeRequest request, string callerId, string callerRole)
     {
         var (status, error, reservation) = await GetById(id, callerId, callerRole);
         if (error != null) return (status, error, null);
 
-        if (reservation!.ScheduledTime - DateTime.UtcNow < TimeSpan.FromHours(12))
+        if (reservation!.State != "pending" && reservation.State != "approved")
+            return (400, "Only a pending or approved reservation can be changed", null);
+
+        if (reservation.ScheduledTime - DateTime.UtcNow < TimeSpan.FromHours(12))
             return (400, "Updating a reservation needs at least 12 hours notice", null);
 
         if (request.ScheduledTime < DateTime.UtcNow || request.ScheduledTime > DateTime.UtcNow.AddDays(7))
@@ -98,7 +122,7 @@ public class ReservationService
         return (200, null, reservation);
     }
 
-    // approves a pending reservation and generates its qr code, BR-7
+    // approves a pending reservation that is still to come and generates its qr code, BR-7
     public async Task<(int Status, string? Error, EnergyReservation? Reservation)> Approve(string id)
     {
         var reservation = await reservations.Find(r => r.Id == id).FirstOrDefaultAsync();
@@ -106,6 +130,9 @@ public class ReservationService
 
         if (reservation.State != "pending")
             return (400, "Only a pending reservation can be approved", null);
+
+        if (reservation.ScheduledTime < DateTime.UtcNow)
+            return (400, "This reservation time has already passed", null);
 
         reservation.State = "approved";
         reservation.QrData = Guid.NewGuid().ToString();
