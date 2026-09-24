@@ -49,8 +49,8 @@ function Stations() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState('')
-  const [deactivating, setDeactivating] = useState<Station | null>(null)
-  const [deactivateError, setDeactivateError] = useState('')
+  const [confirming, setConfirming] = useState<{ station: Station; action: 'deactivate' | 'delete' } | null>(null)
+  const [confirmError, setConfirmError] = useState('')
 
   // loads the nodes once when the page opens
   useEffect(() => {
@@ -121,20 +121,28 @@ function Stations() {
 
   // opens the box that asks the user to confirm the deactivation
   function handleDeactivate(station: Station) {
-    setDeactivateError('')
-    setDeactivating(station)
+    setConfirmError('')
+    setConfirming({ station, action: 'deactivate' })
   }
 
-  // deactivates the station once the user clicks yes, keeps the box open to show the api message if it is refused
-  async function confirmDeactivate() {
-    setDeactivateError('')
+  // opens the box that asks the user to confirm the delete
+  function handleDelete(station: Station) {
+    setConfirmError('')
+    setConfirming({ station, action: 'delete' })
+  }
+
+  // deactivates or deletes the station once the user clicks yes, keeps the box open to show the api message if it is refused
+  async function confirmAction() {
+    const { station, action } = confirming!
+    setConfirmError('')
 
     try {
-      await callApi(`/api/stations/${deactivating!.id}/deactivate`, 'POST')
-      setDeactivating(null)
+      if (action === 'deactivate') await callApi(`/api/stations/${station.id}/deactivate`, 'POST')
+      else await callApi(`/api/stations/${station.id}`, 'DELETE')
+      setConfirming(null)
       loadStations()
     } catch (err) {
-      setDeactivateError((err as Error).message)
+      setConfirmError((err as Error).message)
     }
   }
 
@@ -150,18 +158,6 @@ function Stations() {
     }
   }
 
-  // deletes a station after the user confirms
-  async function handleDelete(station: Station) {
-    if (!window.confirm(`Delete ${station.name}? This cannot be undone.`)) return
-    setError('')
-
-    try {
-      await callApi(`/api/stations/${station.id}`, 'DELETE')
-      loadStations()
-    } catch (err) {
-      setError((err as Error).message)
-    }
-  }
 
   return (
     <Layout>
@@ -330,19 +326,20 @@ function Stations() {
         </Form>
       </Modal>
 
-      <Modal show={deactivating !== null} onHide={() => setDeactivating(null)}>
+      <Modal show={confirming !== null} onHide={() => setConfirming(null)}>
         <Modal.Header closeButton>
-          <Modal.Title>Deactivate node</Modal.Title>
+          <Modal.Title>{confirming?.action === 'delete' ? 'Delete node' : 'Deactivate node'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {deactivateError && <Alert variant="danger">{deactivateError}</Alert>}
-          Are you sure you want to deactivate {deactivating?.name}?
+          {confirmError && <Alert variant="danger">{confirmError}</Alert>}
+          Are you sure you want to {confirming?.action} {confirming?.station.name}?
+          {confirming?.action === 'delete' && ' This cannot be undone.'}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setDeactivating(null)}>
+          <Button variant="secondary" onClick={() => setConfirming(null)}>
             Cancel
           </Button>
-          <Button variant="danger" onClick={confirmDeactivate}>
+          <Button variant="danger" onClick={confirmAction}>
             Yes
           </Button>
         </Modal.Footer>

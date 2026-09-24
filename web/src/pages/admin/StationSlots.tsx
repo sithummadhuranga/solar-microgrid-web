@@ -53,6 +53,8 @@ function StationSlots() {
   const [formError, setFormError] = useState('')
   const [availabilitySlot, setAvailabilitySlot] = useState<Slot | null>(null)
   const [available, setAvailable] = useState('')
+  const [deletingSlot, setDeletingSlot] = useState<Slot | null>(null)
+  const [deleteError, setDeleteError] = useState('')
 
   // loads the node so the page can show its name
   const loadStation = useCallback(() => {
@@ -138,16 +140,22 @@ function StationSlots() {
     }
   }
 
-  // deletes a slot after the user confirms
-  async function handleDelete(slot: Slot) {
-    if (!window.confirm('Delete this slot?')) return
-    setError('')
+  // opens the box that asks the user to confirm the delete
+  function handleDelete(slot: Slot) {
+    setDeleteError('')
+    setDeletingSlot(slot)
+  }
+
+  // deletes the slot once the user clicks yes, keeps the box open to show the api message if it is refused
+  async function confirmDelete() {
+    setDeleteError('')
 
     try {
-      await callApi(`/api/stations/${id}/slots/${slot.id}`, 'DELETE')
+      await callApi(`/api/stations/${id}/slots/${deletingSlot!.id}`, 'DELETE')
+      setDeletingSlot(null)
       loadSlots()
     } catch (err) {
-      setError((err as Error).message)
+      setDeleteError((err as Error).message)
     }
   }
 
@@ -284,6 +292,26 @@ function StationSlots() {
             <Button type="submit">Save</Button>
           </Modal.Footer>
         </Form>
+      </Modal>
+
+      <Modal show={deletingSlot !== null} onHide={() => setDeletingSlot(null)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete slot</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {deleteError && <Alert variant="danger">{deleteError}</Alert>}
+          Are you sure you want to delete the slot from{' '}
+          {deletingSlot && new Date(deletingSlot.startTime).toLocaleString()} to{' '}
+          {deletingSlot && new Date(deletingSlot.endTime).toLocaleString()}? This cannot be undone.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setDeletingSlot(null)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={confirmDelete}>
+            Yes
+          </Button>
+        </Modal.Footer>
       </Modal>
     </Layout>
   )
