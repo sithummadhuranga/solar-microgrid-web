@@ -1,5 +1,5 @@
-// creates, updates, cancels and approves reservations, for backoffice and grid operator
-import { useState } from 'react'
+// creates reservations and lists the pending ones for backoffice and grid operator to approve
+import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
@@ -7,40 +7,78 @@ import Card from 'react-bootstrap/Card'
 import Form from 'react-bootstrap/Form'
 import Button from 'react-bootstrap/Button'
 import Alert from 'react-bootstrap/Alert'
+import Table from 'react-bootstrap/Table'
 import Layout from '../../components/Layout'
 import { callApi } from '../../lib/api'
 
-type Reservation = {
+type Station = {
+  id: string
+  name: string
+}
+
+type Slot = {
+  id: string
+  startTime: string
+  endTime: string
+  availableSlots: number
+  totalSlots: number
+}
+
+type PendingReservation = {
   id: string
   nic: string
-  stationId: string
-  slotId: string
+  stationName: string
+  slotStart: string
+  slotEnd: string
   scheduledTime: string
-  state: string
-  qrData: string | null
 }
 
-// turns a utc iso string from the api into a value the datetime-local input can show
-function toLocalInput(iso: string) {
-  const date = new Date(iso)
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-  return local.toISOString().slice(0, 16)
+// cuts a utc iso string from the api down to date and minutes
+function shortTime(iso: string) {
+  return iso.slice(0, 16).replace('T', ' ')
 }
 
-// shows the new reservation form and the find, change, cancel and approve panel
+// shows the new reservation form and the list of pending reservations to approve
 function ReservationsPage() {
   const [nic, setNic] = useState('')
+  const [stations, setStations] = useState<Station[]>([])
+  const [slots, setSlots] = useState<Slot[]>([])
   const [stationId, setStationId] = useState('')
   const [slotId, setSlotId] = useState('')
   const [scheduledTime, setScheduledTime] = useState('')
   const [createError, setCreateError] = useState('')
   const [createMessage, setCreateMessage] = useState('')
 
-  const [lookupId, setLookupId] = useState('')
-  const [reservation, setReservation] = useState<Reservation | null>(null)
-  const [editScheduledTime, setEditScheduledTime] = useState('')
-  const [editError, setEditError] = useState('')
-  const [editMessage, setEditMessage] = useState('')
+  const [pending, setPending] = useState<PendingReservation[]>([])
+  const [listError, setListError] = useState('')
+  const [listMessage, setListMessage] = useState('')
+
+  // loads the pending reservations, called on open and after every approve or cancel
+  const loadPending = useCallback(() => {
+    callApi('/api/reservations/pending')
+      .then(setPending)
+      .catch((err) => setListError((err as Error).message))
+  }, [])
+
+  // loads the nodes for the dropdown and the pending list when the page opens
+  useEffect(() => {
+    callApi('/api/stations')
+      .then(setStations)
+      .catch((err) => setCreateError((err as Error).message))
+    loadPending()
+  }, [loadPending])
+
+  // loads the slots of the picked node into the slot dropdown
+  function handleStationChange(id: string) {
+    setStationId(id)
+    setSlotId('')
+    setSlots([])
+    if (!id) return
+
+    callApi(`/api/stations/${id}/slots`)
+      .then(setSlots)
+      .catch((err) => setCreateError((err as Error).message))
+  }
 
   // creates a new reservation for the given nic
   async function handleCreate(e: FormEvent) {
@@ -49,9 +87,7 @@ function ReservationsPage() {
     setCreateMessage('')
 
     const cleanNic = nic.trim()
-    const cleanStationId = stationId.trim()
-    const cleanSlotId = slotId.trim()
-    if (!cleanNic || !cleanStationId || !cleanSlotId || !scheduledTime) {
+    if (!cleanNic || !stationId || !slotId || !scheduledTime) {
       setCreateError('Fill in all fields')
       return
     }
@@ -59,93 +95,48 @@ function ReservationsPage() {
     try {
       await callApi('/api/reservations', 'POST', {
         nic: cleanNic,
-        stationId: cleanStationId,
-        slotId: cleanSlotId,
+        stationId,
+        slotId,
         scheduledTime: new Date(scheduledTime).toISOString(),
       })
-      setCreateMessage('Reservation saved')
+      setCreateMessage('Reservation saved, it now waits for approval')
       setNic('')
       setStationId('')
       setSlotId('')
+      setSlots([])
       setScheduledTime('')
+      loadPending()
     } catch (err) {
       setCreateError((err as Error).message)
     }
   }
 
-  // loads a reservation by id into the edit form
-  async function handleLookup(e: FormEvent) {
-    e.preventDefault()
-    setEditError('')
-    setEditMessage('')
-    setReservation(null)
-
-    const cleanLookupId = lookupId.trim()
-    if (!cleanLookupId) {
-      setEditError('Enter a reservation id')
-      return
-    }
+  // approves one pending reservation and generates its qr code
+  async function handleApprove(id: string) {
+    setListError('')
+    setListMessage('')
 
     try {
-      const result: Reservation = await callApi(`/api/reservations/${cleanLookupId}`)
-      setReservation(result)
-      setEditScheduledTime(toLocalInput(result.scheduledTime))
+      await callApi(`/api/reservations/${id}/approve`, 'POST')
+      setListMessage('Reservation approved')
+      loadPending()
     } catch (err) {
-      setEditError((err as Error).message)
+      setListError((err as Error).message)
     }
   }
 
-  // saves changes to the loaded reservation, needs 12 hours notice
-  async function handleUpdate(e: FormEvent) {
-    e.preventDefault()
-    if (!reservation) return
-    setEditError('')
-    setEditMessage('')
-
-    if (!editScheduledTime) {
-      setEditError('Pick a scheduled time')
-      return
-    }
-
-    try {
-      const result: Reservation = await callApi(`/api/reservations/${reservation.id}`, 'PUT', {
-        scheduledTime: new Date(editScheduledTime).toISOString(),
-      })
-      setReservation(result)
-      setEditMessage('Reservation saved')
-    } catch (err) {
-      setEditError((err as Error).message)
-    }
-  }
-
-  // cancels the loaded reservation, needs 12 hours notice
-  async function handleCancel() {
-    if (!reservation) return
+  // cancels one pending reservation, needs 12 hours notice
+  async function handleCancel(id: string) {
     if (!window.confirm('Cancel this reservation?')) return
-    setEditError('')
-    setEditMessage('')
+    setListError('')
+    setListMessage('')
 
     try {
-      const result: Reservation = await callApi(`/api/reservations/${reservation.id}/cancel`, 'POST')
-      setReservation(result)
-      setEditMessage('Reservation cancelled')
+      await callApi(`/api/reservations/${id}/cancel`, 'POST')
+      setListMessage('Reservation cancelled')
+      loadPending()
     } catch (err) {
-      setEditError((err as Error).message)
-    }
-  }
-
-  // approves the loaded reservation and generates its qr code
-  async function handleApprove() {
-    if (!reservation) return
-    setEditError('')
-    setEditMessage('')
-
-    try {
-      const result: Reservation = await callApi(`/api/reservations/${reservation.id}/approve`, 'POST')
-      setReservation(result)
-      setEditMessage('Reservation approved')
-    } catch (err) {
-      setEditError((err as Error).message)
+      setListError((err as Error).message)
     }
   }
 
@@ -154,7 +145,7 @@ function ReservationsPage() {
       <h1 className="fw-semibold mb-4">Reservations</h1>
 
       <Row className="g-4">
-        <Col md={6}>
+        <Col lg={5}>
           <Card className="shadow-sm">
             <Card.Body>
               <Card.Title as="h2" className="h5">
@@ -179,11 +170,26 @@ function ReservationsPage() {
                 </Form.Group>
                 <Form.Group className="mb-3">
                   <Form.Label>Microgrid node</Form.Label>
-                  <Form.Control value={stationId} maxLength={50} onChange={(e) => setStationId(e.target.value)} required />
+                  <Form.Select value={stationId} onChange={(e) => handleStationChange(e.target.value)} required>
+                    <option value="">Pick a node</option>
+                    {stations.map((station) => (
+                      <option key={station.id} value={station.id}>
+                        {station.name}
+                      </option>
+                    ))}
+                  </Form.Select>
                 </Form.Group>
                 <Form.Group className="mb-3">
                   <Form.Label>Slot</Form.Label>
-                  <Form.Control value={slotId} maxLength={50} onChange={(e) => setSlotId(e.target.value)} required />
+                  <Form.Select value={slotId} onChange={(e) => setSlotId(e.target.value)} required>
+                    <option value="">Pick a slot</option>
+                    {slots.map((slot) => (
+                      <option key={slot.id} value={slot.id}>
+                        {shortTime(slot.startTime)} to {shortTime(slot.endTime)} UTC, free {slot.availableSlots} of{' '}
+                        {slot.totalSlots}
+                      </option>
+                    ))}
+                  </Form.Select>
                 </Form.Group>
                 <Form.Group className="mb-3">
                   <Form.Label>Scheduled time</Form.Label>
@@ -202,66 +208,58 @@ function ReservationsPage() {
           </Card>
         </Col>
 
-        <Col md={6}>
+        <Col lg={7}>
           <Card className="shadow-sm">
             <Card.Body>
               <Card.Title as="h2" className="h5">
-                Find a reservation
+                Waiting for approval
               </Card.Title>
 
-              <Form onSubmit={handleLookup} className="d-flex gap-2 mb-3">
-                <Form.Control
-                  placeholder="Reservation id"
-                  maxLength={50}
-                  value={lookupId}
-                  onChange={(e) => setLookupId(e.target.value)}
-                  required
-                />
-                <Button type="submit" variant="outline-primary">
-                  Load
-                </Button>
-              </Form>
-
-              {editError && (
+              {listError && (
                 <Alert variant="danger" className="py-2">
-                  {editError}
+                  {listError}
                 </Alert>
               )}
-              {editMessage && (
+              {listMessage && (
                 <Alert variant="success" className="py-2">
-                  {editMessage}
+                  {listMessage}
                 </Alert>
               )}
 
-              {reservation && (
-                <Form onSubmit={handleUpdate}>
-                  <p className="text-body-secondary mb-3">
-                    NIC {reservation.nic}, node {reservation.stationId}, slot {reservation.slotId}, state{' '}
-                    {reservation.state}
-                  </p>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Scheduled time</Form.Label>
-                    <Form.Control
-                      type="datetime-local"
-                      value={editScheduledTime}
-                      onChange={(e) => setEditScheduledTime(e.target.value)}
-                      required
-                    />
-                  </Form.Group>
-                  <div className="d-flex gap-2">
-                    <Button type="submit" variant="primary">
-                      Save
-                    </Button>
-                    <Button type="button" variant="danger" onClick={handleCancel}>
-                      Cancel reservation
-                    </Button>
-                    {reservation.state === 'pending' && (
-                      <Button type="button" variant="success" onClick={handleApprove}>
-                        Approve
-                      </Button>
-                    )}
-                  </div>
-                </Form>
+              {pending.length === 0 ? (
+                <p className="text-body-secondary mb-0">No reservations are waiting for approval</p>
+              ) : (
+                <Table responsive hover className="align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>NIC</th>
+                      <th>Microgrid node</th>
+                      <th>Slot (UTC)</th>
+                      <th>Scheduled (UTC)</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pending.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.nic}</td>
+                        <td>{item.stationName}</td>
+                        <td>
+                          {shortTime(item.slotStart)} to {shortTime(item.slotEnd)}
+                        </td>
+                        <td>{shortTime(item.scheduledTime)}</td>
+                        <td className="text-end text-nowrap">
+                          <Button size="sm" variant="success" className="me-2" onClick={() => handleApprove(item.id)}>
+                            Approve
+                          </Button>
+                          <Button size="sm" variant="outline-danger" onClick={() => handleCancel(item.id)}>
+                            Cancel
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
               )}
             </Card.Body>
           </Card>

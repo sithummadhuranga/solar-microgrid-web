@@ -14,13 +14,42 @@ public class ReservationViewService
     private readonly IMongoCollection<EnergyReservation> reservations;
     private readonly IMongoCollection<SolarStation> stations;
     private readonly IMongoCollection<UserDetail> users;
+    private readonly IMongoCollection<EnergyBookingSlot> slots;
 
-    // gets the reservation, station and user collections
+    // gets the reservation, station, user and slot collections
     public ReservationViewService(IMongoDatabase db)
     {
         reservations = db.GetCollection<EnergyReservation>("EnergyReservation");
         stations = db.GetCollection<SolarStation>("SolarStationInfo");
         users = db.GetCollection<UserDetail>("UserDetail");
+        slots = db.GetCollection<EnergyBookingSlot>("EnergyBookingSlots");
+    }
+
+    // lists every pending reservation that is still to come, with node names and slot times for staff
+    public async Task<List<PendingReservation>> ListPending()
+    {
+        var waiting = await reservations
+            .Find(r => r.State == "pending" && r.ScheduledTime > DateTime.UtcNow)
+            .SortBy(r => r.ScheduledTime)
+            .ToListAsync();
+
+        var stationNames = (await stations.Find(_ => true).ToListAsync()).ToDictionary(s => s.Id, s => s.Name);
+        var slotList = (await slots.Find(_ => true).ToListAsync()).ToDictionary(s => s.Id);
+
+        return waiting.Select(r =>
+        {
+            slotList.TryGetValue(r.SlotId, out var slot);
+            return new PendingReservation
+            {
+                Id = r.Id,
+                Nic = r.Nic,
+                StationName = stationNames.GetValueOrDefault(r.StationId, "Removed node"),
+                SlotStart = slot?.StartTime ?? r.ScheduledTime,
+                SlotEnd = slot?.EndTime ?? r.ScheduledTime,
+                ScheduledTime = r.ScheduledTime,
+                State = r.State
+            };
+        }).ToList();
     }
 
     // lists the caller's own reservations, narrowed by state and by a search on the node name
