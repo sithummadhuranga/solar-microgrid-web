@@ -24,6 +24,8 @@ const adminLinks = [
 const operatorLinks = [
   { to: '/operator', label: 'Home' },
   { to: '/operator/reservations', label: 'Reservations' },
+  { to: '/operator/bookings', label: 'Booking monitor' },
+  { to: '/operator/slots', label: 'Slot availability' },
 ]
 
 function Layout({ children }: LayoutProps) {
