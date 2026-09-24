@@ -41,6 +41,26 @@ public class ReservationViewService
         return await reservations.Find(filter).SortBy(r => r.ScheduledTime).ToListAsync();
     }
 
+    // lists every reservation for staff to monitor, narrowed by state and by a search on nic or node name
+    public async Task<List<EnergyReservation>> ListAll(string state, string search)
+    {
+        var filter = Builders<EnergyReservation>.Filter.Empty;
+
+        var states = state.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (states.Length > 0)
+            filter &= Builders<EnergyReservation>.Filter.In(r => r.State, states);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var pattern = new BsonRegularExpression(Regex.Escape(search), "i");
+            filter &= Builders<EnergyReservation>.Filter.Or(
+                Builders<EnergyReservation>.Filter.Regex(r => r.Nic, pattern),
+                Builders<EnergyReservation>.Filter.In(r => r.StationId, await StationIdsNamed(search)));
+        }
+
+        return await reservations.Find(filter).SortBy(r => r.ScheduledTime).ToListAsync();
+    }
+
     // counts the caller's pending reservations and the approved ones still to come
     public async Task<ReservationSummary> Summary(string callerId)
     {
