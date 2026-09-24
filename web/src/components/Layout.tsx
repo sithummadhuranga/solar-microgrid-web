@@ -25,6 +25,7 @@ const operatorLinks = [
   { to: '/operator', label: 'Home' },
   { to: '/operator/stations', label: 'Microgrid nodes' },
   { to: '/operator/reservations', label: 'Reservations' },
+  { to: '/operator/bookings', label: 'Booking monitor' },
 ]
 
 function Layout({ children }: LayoutProps) {
@@ -32,6 +33,7 @@ function Layout({ children }: LayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const links = user?.role === 'Backoffice' ? adminLinks : user?.role === 'GridOperator' ? operatorLinks : []
+  const brandTo = user?.role === 'Backoffice' ? '/admin' : user?.role === 'GridOperator' ? '/operator' : '/'
 
   // clears the login and sends the user back to the login page
   function handleLogout() {
@@ -43,7 +45,7 @@ function Layout({ children }: LayoutProps) {
     <>
       <Navbar bg="primary" variant="dark" expand="md" className="mb-4 shadow-sm py-2" sticky="top">
         <Container>
-          <Navbar.Brand as={Link} to="/" className="fw-semibold fs-5">
+          <Navbar.Brand as={Link} to={brandTo} className="fw-semibold fs-5">
             Solar Microgrid
           </Navbar.Brand>
           <Navbar.Toggle aria-controls="main-nav" />

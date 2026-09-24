@@ -10,6 +10,7 @@ import Users from './pages/admin/Users'
 import Prosumers from './pages/admin/Prosumers'
 import PendingActivations from './pages/admin/PendingActivations'
 import ReservationsPage from './pages/reservations/ReservationsPage'
+import BookingMonitor from './pages/operator/BookingMonitor'
 import RequireRole from './components/RequireRole'
 
 function App() {
@@ -102,6 +103,14 @@ function App() {
         element={
           <RequireRole role="GridOperator">
             <ReservationsPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/operator/bookings"
+        element={
+          <RequireRole role="GridOperator">
+            <BookingMonitor />
           </RequireRole>
         }
       />
