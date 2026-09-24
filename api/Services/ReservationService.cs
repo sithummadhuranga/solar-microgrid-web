@@ -97,4 +97,20 @@ public class ReservationService
         await reservations.ReplaceOneAsync(r => r.Id == id, reservation);
         return (200, null, reservation);
     }
+
+    // approves a pending reservation and generates its qr code, BR-7
+    public async Task<(int Status, string? Error, EnergyReservation? Reservation)> Approve(string id)
+    {
+        var reservation = await reservations.Find(r => r.Id == id).FirstOrDefaultAsync();
+        if (reservation == null) return (404, "Reservation not found", null);
+
+        if (reservation.State != "pending")
+            return (400, "Only a pending reservation can be approved", null);
+
+        reservation.State = "approved";
+        reservation.QrData = Guid.NewGuid().ToString();
+
+        await reservations.ReplaceOneAsync(r => r.Id == id, reservation);
+        return (200, null, reservation);
+    }
 }
