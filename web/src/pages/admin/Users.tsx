@@ -21,9 +21,13 @@ type StaffUser = {
 const emptyForm = {
   email: '',
   password: '',
+  confirmPassword: '',
   fullName: '',
   role: 'GridOperator',
 }
+
+const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+const minPasswordLength = 8
 
 function Users() {
   const [users, setUsers] = useState<StaffUser[]>([])
@@ -57,7 +61,7 @@ function Users() {
   // opens the form filled with an existing user, the password box starts empty
   function openEdit(user: StaffUser) {
     setEditingId(user.id)
-    setForm({ email: user.email, password: '', fullName: user.fullName, role: user.role })
+    setForm({ email: user.email, password: '', confirmPassword: '', fullName: user.fullName, role: user.role })
     setFormError('')
     setShowForm(true)
   }
@@ -67,10 +71,29 @@ function Users() {
     setForm({ ...form, [field]: value })
   }
 
+  // checks the user form, returns an error message or empty
+  function validate(): string {
+    if (!emailPattern.test(form.email)) return 'Email is not a valid address'
+
+    // a new password is required when adding a user, optional when editing one
+    const settingPassword = !editingId || form.password.length > 0
+    if (settingPassword && form.password.length < minPasswordLength)
+      return `Password must be at least ${minPasswordLength} characters`
+    if (settingPassword && form.password !== form.confirmPassword) return 'Passwords do not match'
+
+    return ''
+  }
+
   // sends the new or changed user to the api
   async function handleSave(e: FormEvent) {
     e.preventDefault()
     setFormError('')
+
+    const validationError = validate()
+    if (validationError) {
+      setFormError(validationError)
+      return
+    }
 
     try {
       if (editingId) await callApi(`/api/users/${editingId}`, 'PUT', form)
@@ -165,8 +188,21 @@ function Users() {
                 value={form.password}
                 onChange={(e) => setField('password', e.target.value)}
                 required={!editingId}
+                minLength={minPasswordLength}
               />
             </Form.Group>
+
+            {(!editingId || form.password) && (
+              <Form.Group className="mb-3">
+                <Form.Label>Confirm password</Form.Label>
+                <Form.Control
+                  type="password"
+                  value={form.confirmPassword}
+                  onChange={(e) => setField('confirmPassword', e.target.value)}
+                  required={!editingId || !!form.password}
+                />
+              </Form.Group>
+            )}
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowForm(false)}>
