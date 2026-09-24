@@ -131,7 +131,7 @@ function Stations() {
     setConfirming({ station, action: 'delete' })
   }
 
-  // deactivates or deletes the station once the user clicks yes, keeps the box open to show the api message if it is refused
+  // deactivates or deletes the station once the user clicks yes
   async function confirmAction() {
     const { station, action } = confirming!
     setConfirmError('')

@@ -21,7 +21,7 @@ public class SlotService
         reservations = db.GetCollection<EnergyReservation>("EnergyReservation");
     }
 
-    // gets the slots of a station in time order, prosumers only get slots that have not ended on active stations, upcomingOnly skips ended slots for anyone
+    // gets the slots of a station in time order, prosumers and upcomingOnly skip slots that have ended
     public async Task<(int Status, string? Error, List<EnergyBookingSlot>? Slots)> GetForStation(string stationId, bool isProsumer, bool upcomingOnly)
     {
         var station = await stations.Find(s => s.Id == stationId).FirstOrDefaultAsync();

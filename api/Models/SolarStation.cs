@@ -8,7 +8,7 @@ namespace SolarMicrogrid.Api.Models;
 
 public class SolarStation
 {
-    // a guid made before insert, same idea as user ids
+    // a guid made before insert
     [BsonId]
     public string Id { get; set; } = "";
 

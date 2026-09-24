@@ -146,7 +146,7 @@ function StationSlots() {
     setDeletingSlot(slot)
   }
 
-  // deletes the slot once the user clicks yes, keeps the box open to show the api message if it is refused
+  // deletes the slot once the user clicks yes
   async function confirmDelete() {
     setDeleteError('')
 

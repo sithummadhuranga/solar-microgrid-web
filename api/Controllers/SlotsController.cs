@@ -22,7 +22,7 @@ public class SlotsController : ControllerBase
         this.service = service;
     }
 
-    // lists the slots of a station, prosumers only see slots that have not ended on active stations, ?upcoming=true gives only slots that have not ended to anyone
+    // lists the slots of a station, ?upcoming=true skips slots that have ended
     [HttpGet]
     public async Task<IActionResult> GetAll(string stationId, [FromQuery] bool upcoming = false)
     {
