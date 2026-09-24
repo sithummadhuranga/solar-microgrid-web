@@ -40,6 +40,14 @@ public class ReservationViewsController : ControllerBase
         return Ok(await service.ListAll(state, search));
     }
 
+    // lists the pending reservations for staff to approve, no id lookup needed
+    [HttpGet("pending")]
+    [Authorize(Roles = "Backoffice,GridOperator")]
+    public async Task<IActionResult> Pending()
+    {
+        return Ok(await service.ListPending());
+    }
+
     // gives the dashboard its pending count and its approved future count
     [HttpGet("summary")]
     [Authorize(Roles = "Prosumer")]
