@@ -2,6 +2,7 @@
 // Purpose: rules for creating and updating backoffice and grid operator accounts
 // Author: H.M.T.S.M.Dissanayake
 
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Identity;
 using MongoDB.Driver;
 using SolarMicrogrid.Api.Models;
@@ -10,6 +11,12 @@ namespace SolarMicrogrid.Api.Services;
 
 public class UserService
 {
+    // shortest password accepted, checked again here even though the client already checks it
+    private const int MinPasswordLength = 8;
+
+    // a plain email shape, not a full spec, good enough to catch a typo
+    private static readonly Regex EmailPattern = new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+
     private readonly IMongoCollection<UserDetail> users;
     private readonly PasswordHasher<UserDetail> hasher;
 
@@ -77,9 +84,13 @@ public class UserService
     private async Task<string?> Check(UserRequest request, string? excludingId)
     {
         if (string.IsNullOrWhiteSpace(request.Email)) return "Email is required";
+        if (!EmailPattern.IsMatch(request.Email)) return "Email is not a valid address";
         if (string.IsNullOrWhiteSpace(request.FullName)) return "Full name is required";
         if (request.Role != "Backoffice" && request.Role != "GridOperator") return "Role must be Backoffice or GridOperator";
+
         if (excludingId == null && string.IsNullOrWhiteSpace(request.Password)) return "Password is required";
+        if (!string.IsNullOrWhiteSpace(request.Password) && request.Password.Length < MinPasswordLength)
+            return $"Password must be at least {MinPasswordLength} characters";
 
         var existing = await users.Find(u => u.Email == request.Email).FirstOrDefaultAsync();
         if (existing != null && existing.Id != excludingId) return "Email is already used";

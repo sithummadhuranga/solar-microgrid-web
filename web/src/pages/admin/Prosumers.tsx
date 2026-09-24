@@ -23,10 +23,13 @@ type Prosumer = {
 const emptyForm = {
   nic: '',
   password: '',
+  confirmPassword: '',
   fullName: '',
   phone: '',
   address: '',
 }
+
+const minPasswordLength = 8
 
 function Prosumers() {
   const [prosumers, setProsumers] = useState<Prosumer[]>([])
@@ -60,7 +63,14 @@ function Prosumers() {
   // opens the form filled with an existing prosumer, the password box is not shown for an edit
   function openEdit(prosumer: Prosumer) {
     setEditingId(prosumer.id)
-    setForm({ nic: prosumer.nic, password: '', fullName: prosumer.fullName, phone: prosumer.phone, address: prosumer.address })
+    setForm({
+      nic: prosumer.nic,
+      password: '',
+      confirmPassword: '',
+      fullName: prosumer.fullName,
+      phone: prosumer.phone,
+      address: prosumer.address,
+    })
     setFormError('')
     setShowForm(true)
   }
@@ -70,10 +80,24 @@ function Prosumers() {
     setForm({ ...form, [field]: value })
   }
 
+  // checks the new prosumer form before it goes to the api, returns an error message or empty when it is fine
+  function validate(): string {
+    if (editingId) return ''
+    if (form.password.length < minPasswordLength) return `Password must be at least ${minPasswordLength} characters`
+    if (form.password !== form.confirmPassword) return 'Passwords do not match'
+    return ''
+  }
+
   // sends the new or changed prosumer to the api, a new one is created pending
   async function handleSave(e: FormEvent) {
     e.preventDefault()
     setFormError('')
+
+    const validationError = validate()
+    if (validationError) {
+      setFormError(validationError)
+      return
+    }
 
     try {
       if (editingId) {
@@ -202,12 +226,12 @@ function Prosumers() {
 
             <Form.Group className="mb-3">
               <Form.Label>Phone</Form.Label>
-              <Form.Control value={form.phone} onChange={(e) => setField('phone', e.target.value)} />
+              <Form.Control value={form.phone} onChange={(e) => setField('phone', e.target.value)} required />
             </Form.Group>
 
             <Form.Group className="mb-3">
               <Form.Label>Address</Form.Label>
-              <Form.Control value={form.address} onChange={(e) => setField('address', e.target.value)} />
+              <Form.Control value={form.address} onChange={(e) => setField('address', e.target.value)} required />
             </Form.Group>
 
             {!editingId && (
@@ -217,6 +241,19 @@ function Prosumers() {
                   type="password"
                   value={form.password}
                   onChange={(e) => setField('password', e.target.value)}
+                  required
+                  minLength={minPasswordLength}
+                />
+              </Form.Group>
+            )}
+
+            {!editingId && (
+              <Form.Group className="mb-3">
+                <Form.Label>Confirm password</Form.Label>
+                <Form.Control
+                  type="password"
+                  value={form.confirmPassword}
+                  onChange={(e) => setField('confirmPassword', e.target.value)}
                   required
                 />
               </Form.Group>

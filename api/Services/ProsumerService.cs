@@ -10,6 +10,9 @@ namespace SolarMicrogrid.Api.Services;
 
 public class ProsumerService
 {
+    // shortest password accepted, checked again here even though the client already checks it
+    private const int MinPasswordLength = 8;
+
     private readonly IMongoCollection<UserDetail> users;
     private readonly PasswordHasher<UserDetail> hasher;
 
@@ -25,7 +28,10 @@ public class ProsumerService
     {
         if (string.IsNullOrWhiteSpace(request.Nic)) return (400, "NIC is required", null);
         if (string.IsNullOrWhiteSpace(request.Password)) return (400, "Password is required", null);
+        if (request.Password.Length < MinPasswordLength) return (400, $"Password must be at least {MinPasswordLength} characters", null);
         if (string.IsNullOrWhiteSpace(request.FullName)) return (400, "Full name is required", null);
+        if (string.IsNullOrWhiteSpace(request.Phone)) return (400, "Phone is required", null);
+        if (string.IsNullOrWhiteSpace(request.Address)) return (400, "Address is required", null);
 
         if (await users.Find(u => u.Nic == request.Nic).AnyAsync())
             return (400, "NIC is already registered", null);
@@ -78,6 +84,8 @@ public class ProsumerService
 
         if (string.IsNullOrWhiteSpace(request.Nic)) return (400, "NIC is required", null);
         if (string.IsNullOrWhiteSpace(request.FullName)) return (400, "Full name is required", null);
+        if (string.IsNullOrWhiteSpace(request.Phone)) return (400, "Phone is required", null);
+        if (string.IsNullOrWhiteSpace(request.Address)) return (400, "Address is required", null);
 
         var existing = await GetByNic(request.Nic);
         if (existing != null && existing.Id != id) return (400, "NIC is already registered", null);
@@ -97,6 +105,8 @@ public class ProsumerService
         var prosumer = await Get(id);
         if (prosumer == null) return (404, "Prosumer not found", null);
         if (string.IsNullOrWhiteSpace(request.FullName)) return (400, "Full name is required", null);
+        if (string.IsNullOrWhiteSpace(request.Phone)) return (400, "Phone is required", null);
+        if (string.IsNullOrWhiteSpace(request.Address)) return (400, "Address is required", null);
 
         prosumer.FullName = request.FullName;
         prosumer.Phone = request.Phone;
@@ -112,6 +122,7 @@ public class ProsumerService
         var prosumer = await Get(id);
         if (prosumer == null) return (404, "Prosumer not found");
         if (string.IsNullOrWhiteSpace(request.NewPassword)) return (400, "New password is required");
+        if (request.NewPassword.Length < MinPasswordLength) return (400, $"Password must be at least {MinPasswordLength} characters");
 
         if (hasher.VerifyHashedPassword(prosumer, prosumer.PasswordHash, request.CurrentPassword) == PasswordVerificationResult.Failed)
             return (400, "Current password is wrong");
