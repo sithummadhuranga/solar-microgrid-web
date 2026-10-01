@@ -16,7 +16,8 @@ export async function callApi(path: string, method = 'GET', body: unknown = null
   const text = await res.text()
   const data = text ? JSON.parse(text) : null
 
-  if (res.status === 401) {
+  // only log out a signed in call, an anonymous login attempt just failed the normal way
+  if ((res.status === 401 || res.status === 403) && token) {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     window.location.href = '/login'

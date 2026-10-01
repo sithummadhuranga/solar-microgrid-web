@@ -26,8 +26,7 @@ public class AuthService
         this.config = config;
     }
 
-    // only prosumers have a nic, so this stops two prosumers sharing one
-    // only backoffice and grid operator have an email, so this stops two of them sharing one
+    // makes nic and email unique, each only checked for the role that has it
     public async Task EnsureIndexes()
     {
         var nicIndex = new CreateIndexModel<UserDetail>(
@@ -74,6 +73,12 @@ public class AuthService
             return (403, "Your account is deactivated", null, null);
 
         return (200, null, MakeToken(user), user);
+    }
+
+    // gets a user by id, used to check their real current role and status
+    public async Task<UserDetail?> GetById(string id)
+    {
+        return await users.Find(u => u.Id == id).FirstOrDefaultAsync();
     }
 
     // builds the token the user keeps after logging in

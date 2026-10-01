@@ -24,6 +24,12 @@ builder.Services.AddSingleton(sp =>
 
 builder.Services.AddSingleton<PasswordHasher<UserDetail>>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<ProsumerService>();
+builder.Services.AddScoped<StationService>();
+builder.Services.AddScoped<SlotService>();
+builder.Services.AddScoped<ReservationService>();
+builder.Services.AddScoped<ReservationViewService>();
 
 // checks the token on every request, and that the account is still active
 builder.Services
@@ -97,6 +103,10 @@ using (var scope = app.Services.CreateScope())
         admin.PasswordHash = hasher.HashPassword(admin, app.Configuration["Seed:BackofficePassword"]!);
         await users.InsertOneAsync(admin);
     }
+
+    // sample microgrid nodes and slots, only added when the node collection is empty
+    var stationService = scope.ServiceProvider.GetRequiredService<StationService>();
+    await stationService.AddSampleData();
 }
 
 // Configure the HTTP request pipeline.
