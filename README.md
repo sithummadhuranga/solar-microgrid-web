@@ -1,6 +1,13 @@
 # solar-microgrid
 
-Smart Solar Microgrid Trading System, a university practice project. A web app for Backoffice staff and Grid Operators, backed by a C# Web API that holds all the business logic and talks to MongoDB.
+Smart Solar Microgrid Trading System, our SE4040 assignment at SLIIT. This repo has the C# Web API and the React web app for Backoffice staff and grid operators. The API holds all the business logic and uses MongoDB. The Android app is in a separate repo.
+
+Git repositories:
+
+- Web API and web app: https://github.com/sithummadhuranga/solar-microgrid-web
+- Android app: https://github.com/sithummadhuranga/solar-microgrid-mobile
+
+The API is hosted at https://api-solarmicrogrid.sithum.dev and the web app at https://solarmicrogrid.sithum.dev.
 
 ## Folders
 
@@ -8,44 +15,54 @@ api is the C# Web API. web is the React web app.
 
 ## Needed
 
-.NET 10 SDK, Node 22.22 or newer, MongoDB running locally.
+.NET 10 SDK, Node 22.22 or newer, and MongoDB running locally.
 
 ## Running the api
 
-cd api, then dotnet run. Listens on http://localhost:5080.
+The secrets are not in git. From the api folder, set them with user secrets first. The JWT key needs at least 32 characters.
+
+```
+dotnet user-secrets set "Jwt:Key" "a-long-random-key-of-at-least-32-characters"
+dotnet user-secrets set "Seed:BackofficeEmail" "admin@example.com"
+dotnet user-secrets set "Seed:BackofficeName" "Admin"
+dotnet user-secrets set "Seed:BackofficePassword" "a-password-of-8-or-more-characters"
+```
+
+Then run `dotnet run`. It listens on http://localhost:5080. The first time it starts, it creates the Backoffice user from the Seed settings and adds some sample nodes and slots.
 
 ## Running the web app
 
-cd web, npm install, then npm run dev. Runs on http://localhost:5173 and reads the api address from web/.env.
+In the web folder run `npm install`, copy `.env.example` to `.env`, then run `npm run dev`. It runs on http://localhost:5173.
 
-## How we work
+In `.env`, `VITE_API_URL` is the api address (http://localhost:5080 when running locally) and `VITE_GOOGLE_MAPS_API_KEY` is for the map on the node form.
 
-Every member commits from their own account, small steps, short lower case commit messages saying what changed.
+Log in with the Backoffice account from the Seed settings. Grid operators are added on the Web users page, and new prosumers are activated on the Pending activations page.
 
 ## Who did what
 
 | Member | Name | Contribution |
 |---|---|---|
-| 1 | Sithum Madhuranga | Login and roles, prosumer management, pending activations, IIS hosting and deployment |
-| 2 | Christine Lowe | Microgrid node management, map location picker |
-| 3 | Sathush Nanayakkara | Reservation management, booking rules |
-| 4 | Nimnath Nadushka | Home page, operator tools |
+| 1 | Sithum Madhuranga | Login and roles. Web users, prosumers and pending activations. The web layout and api helper. IIS hosting. On Android: login, register and profile. |
+| 2 | Christine Lowe | Nodes and slots in the api and on the web. Sample node data. The map screen on Android. |
+| 3 | Sathush Nanayakkara | Reservations: create, change, cancel and approve, with the 7 day and 12 hour rules. The web reservations page. On Android: reserve, modify, cancel, summary and QR screens. |
+| 4 | Nimnath Nadushka | Booking lists, history and dashboards. QR verify and complete. The web booking monitor and operator home. On Android: dashboard, history, search, SQLite and the operator scan screens. |
+
+Everyone commits from their own account. Sathush commits as Sathufit and as G S R Nanayakkara.
 
 ## Hosting on IIS
 
-The API is live at https://api-solarmicrogrid.sithum.dev, hosted on a Windows Server 2022 Azure VM.
+The API is hosted on Windows IIS. We made a Windows Server 2022 Datacenter virtual machine in Azure (the Azure Edition, not Core) with ports 80, 443 and 3389 open, then added the Web Server (IIS) role and the .NET 10 Hosting Bundle. IIS only accepted the site config after we ran the Hosting Bundle installer again and restarted the server.
 
-1. Install the Web Server (IIS) role (Server Manager, Add Roles and Features).
-2. Install the ASP.NET Core Hosting Bundle (from the .NET downloads page), then run `iisreset`.
-3. Create a MongoDB Atlas cluster and set its connection string in `api/appsettings.Production.json` (not committed, see `.gitignore`), along with `Jwt:Key` and the `Seed:*` admin account fields.
-4. On the dev machine: `cd api`, `dotnet publish SolarMicrogrid.Api.csproj -c Release -o publish`.
-5. Copy the `publish` folder onto the server, e.g. to `C:\inetpub\solar-microgrid-api`.
-6. In IIS Manager, add an application pool with .NET CLR version "No Managed Code", then add a site pointing at that folder, bound to port 80, with the DNS host name used for the API.
-7. In the site's `web.config`, set `ASPNETCORE_ENVIRONMENT` to `Production` inside an `<environmentVariables>` block under `<aspNetCore>`.
-8. Open inbound ports 80 and 443 on the VM's network security group.
-9. Point a DNS A record at the VM's public IP for the API's hostname.
-10. Run `win-acme` (wacs.exe) on the server to issue and install a free Let's Encrypt certificate for that hostname, which also adds the HTTPS binding and sets up auto-renewal.
+The data is in MongoDB Atlas, because a MongoDB on a developer's machine cannot be reached from the server. We published the API with `dotnet publish SolarMicrogrid.Api.csproj -c Release -o publish` and copied the output to `C:\inetpub\solar-microgrid-api`. The production settings are in an `appsettings.Production.json` in that folder: the Atlas connection string, `Jwt:Key`, the `Seed` settings and `Cors:WebOrigin`. That file is in `.gitignore`, so it is not in git.
+
+In IIS Manager there is an application pool set to No Managed Code and a site on port 80 for the api host name. The Default Web Site is stopped because it also used port 80. `web.config` sets `ASPNETCORE_ENVIRONMENT` to `Production`. A DNS A record points the host name at the VM's public IP, and win-acme (`wacs.exe`) got a free Let's Encrypt certificate, which added the https binding and a renewal task.
+
+A request to `/api/stations` with no token returns 401, so the API is reachable and protected.
+
+## Web app on Vercel
+
+The web app is on Vercel, built from the `web` folder of this repo. `VITE_API_URL` and `VITE_GOOGLE_MAPS_API_KEY` are set in Vercel as normal variables, not secret ones. `web/vercel.json` sends every path to `index.html`, so refreshing a page like `/admin` works. The domain has a CNAME record that points at Vercel.
 
 ## Demo video
 
-Link to be added.
+[Watch the demo video](https://mysliit-my.sharepoint.com/:v:/g/personal/it23294066_my_sliit_lk/IQAljAkOOszgTb6KeODPJiayAUKaTudZiSvAkkNeI6I1FOU?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJTdHJlYW1XZWJBcHAiLCJyZWZlcnJhbFZpZXciOiJTaGFyZURpYWxvZy1MaW5rIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXcifX0%3D&e=oiL80W)
